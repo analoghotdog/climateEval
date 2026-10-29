@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Collection climate evaluator</title>
 <style>
-:root{--bg:#e9e7e0;--panel:#f6f5f1;--ink:#22262d;--mute:#5a616d;--line:#cbc8bd;--good:#2f6f4f;--ok:#56677a;--caut:#92600f;--risk:#8b1e2d;--acc:#2a5d6e;--temp:#7a4f9e;--trk:#c9c6bb;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#15181c;--panel:#1e2227;--ink:#e6e4de;--mute:#9aa0aa;--line:#363c44;--good:#38865f;--ok:#62768a;--caut:#a8701a;--risk:#b0364a;--acc:#74b4c8;--temp:#b98fd9;--trk:#3a4048;color-scheme:dark}}
+:root{--bg:#e9e7e0;--panel:#f6f5f1;--ink:#22262d;--mute:#5a616d;--line:#cbc8bd;--good:#2f6f4f;--ok:#56677a;--caut:#92600f;--risk:#8b1e2d;--acc:#2a5d6e;--temp:#7a4f9e;--chart-rh:#1769d2;--chart-temp:#e31b23;--trk:#c9c6bb;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#15181c;--panel:#1e2227;--ink:#e6e4de;--mute:#9aa0aa;--line:#363c44;--good:#38865f;--ok:#62768a;--caut:#a8701a;--risk:#b0364a;--acc:#74b4c8;--temp:#b98fd9;--chart-rh:#58a6ff;--chart-temp:#ff5a5f;--trk:#3a4048;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 .wrap{max-width:1040px;margin:0 auto;padding:20px 16px 48px}
@@ -185,7 +185,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 <li><b>Chemical ageing.</b> Heat and humidity speed up the slow chemical breakdown of paper, textile, film and other organic material. The rating uses IPI’s PI: 75 or more is Good, 45 to under 75 is Caution, and under 45 is Risk. The lifetime multiplier comes from five published models. They agree between 30% and 60% RH and drift apart outside that range, where there is little data.</li>
 <li><b>Mechanical damage.</b> Wood, paper, leather and similar materials take up and lose moisture as humidity changes, so they swell and shrink. Too dry or too damp strains them. The check uses the moisture content they would settle at. The comfortable range is 5 to 12.5%. IPI has no Good band for this cause, so in range is rated OK and outside it is Risk. A single reading cannot show fluctuation. The Logged data tab can.</li>
 <li><b>Mould.</b> The rating follows CCI data on how long mould takes to start at each RH. Below 65% RH, spores do not germinate (start to grow) within 1000 days. Germination takes about 600 days at 65%, 50 days at 70%, 12 days at 75% and 1.5 days at 80%. Visible growth takes longer: about 500, 130, 35 and 12 days at the same points. These figures apply to surfaces rich in protein, starch or sugar, such as leather, skin, parchment and sized or soiled textile. For those, Risk starts at 70% RH and Caution at 65%, widened by your safety margin. For clean paper, textile and wood, CCI puts visible growth at about 80 to 85% RH, so Risk starts at 80%. CCI fitted its figures near 25 °C and treats them as cautious at other temperatures. A sustained drop below 65% RH ends the growth cycle. A second model, Sedlbauer’s, puts the limit near 76% RH at 20 °C. It is shown for reference and does not set the rating, because it is less cautious for museum materials.</li>
-<li><b>Metal corrosion.</b> Corrosion speeds up as moisture rises, sharply above 75% RH. The rating uses moisture content: under 7.0% is Good, 7.0 to under 10.5% is Caution, and 10.5% or more is Risk. Salts left on salt-contaminated or archaeological metal absorb water at low RH (calcium chloride at 33%, magnesium chloride at 35%). For these, Risk starts at 33% and Caution at 30%, the typical critical RH CCI gives for special metal collections.</li>
+<li><b>Metal corrosion.</b> Corrosion speeds up as moisture rises, sharply above 75% RH. The rating uses moisture content: under 7.0% is Good, 7.0 to under 10.5% is OK, and 10.5% or more is Risk. Salts left on salt-contaminated or archaeological metal absorb water at low RH (calcium chloride at 33%, magnesium chloride at 35%). For these, Risk starts at 33% and Caution at 30%, the typical critical RH CCI gives for special metal collections.</li>
 <li><b>Gelatin blocking.</b> CCI advises keeping RH below 60% so photographic gelatin layers do not stick together. Above 60% is Caution and 75% or more is Risk.</li>
 </ul>
 
@@ -300,7 +300,7 @@ function metrics(T,RH,buf){
   const P=PROF[st.prof],na=k=>P[k]==='na';
   const watch=cl(65-buf,0,65),riskAt=P.mould==='clean'?80:70;
   const mould=RH>=riskAt?'risk':RH>=watch?'caut':'good';
-  let metal=E<7?'good':E<10.5?'caut':'risk';
+  let metal=E<7?'good':E<10.5?'ok':'risk';
   if(P.metal==='salt')metal=RH>=33?'risk':RH>=30?'caut':'good';
   return{PI,LM,lm,xs,E,l0,mg,tg,tf,watch,riskAt,
     aging:na('aging')?'na':(PI>=75?'good':PI>=45?'caut':'risk'),
@@ -548,8 +548,8 @@ function logVerdicts(a,P){
     out.push(['Metal corrosion',chip,`${hTxt(a.hSaltR)} ≥33% RH`,`Chloride salts start absorbing water above about 33% RH. Hours at or above 30% RH: ${hTxt(a.hSaltW)}.`]);
   }else{
     const riskH=Math.max(a.hDamp,a.mRisk),thr=0.005*a.periodH;
-    const chip=riskH>=thr?'risk':riskH>0?'caut':a.mOk>=0.5*a.periodH?'caut':'good';
-    out.push(['Metal corrosion',chip,`${hTxt(a.hDamp)} ≥75% RH`,`Damp above 75% RH accelerates corrosion. Time by moisture content: under 7.0% ${hTxt(a.mGood)}, 7.0 to under 10.5 ${hTxt(a.mOk)}, 10.5 and above ${hTxt(a.mRisk)}.`]);
+    const chip=riskH>=thr?'risk':riskH>0?'caut':a.mOk>=0.5*a.periodH?'ok':'good';
+    out.push(['Metal corrosion',chip,`${hTxt(a.hDamp)} ≥75% RH`,`Damp above 75% RH accelerates corrosion. Time by moisture content: under 7.0% ${hTxt(a.mGood)}, 7.0 to under 10.5% ${hTxt(a.mOk)} (OK), 10.5% and above ${hTxt(a.mRisk)}.`]);
   }
   if(a.hGelW||a.hGelR)out.push(['Gelatin blocking',a.hGelR>0?'risk':a.hGelW>0?'caut':'good',`${hTxt(a.hGelW)} above 60% RH`,`CCI advises avoiding RH above 60% to limit sticking. Hours at or above 75% RH: ${hTxt(a.hGelR)}.`]);
   if(a.ashName){
@@ -610,11 +610,11 @@ function drawLogCharts(){
   if(!logState||!logState.rows||!logState.rows.length){ch.innerHTML='';return}
   const a=logAnalysis,cfg=logCfg(),A2=cfg.ash&&ASH[cfg.ash]?ASH[cfg.ash]:null;
   const bandTxt=A2&&A2.dRH!=null?`<span class="ki"><span class="sr"></span>Setpoint band ${cfg.baseRH.toFixed(0)}±${A2.dRH}% RH (ASHRAE ${A2.name})</span>`:'';
-  ch.innerHTML=`<div class="chart"><div class="key"><span class="ki"><span class="ln" style="border-color:${getComputedStyle(document.body).getPropertyValue('--acc').trim()}"></span>RH % (left axis)</span><span class="ki"><span class="ln" style="border-color:${getComputedStyle(document.body).getPropertyValue('--temp').trim()}"></span>Temperature (right axis, ${st.F?'°F':'°C'})</span><span class="ki"><span class="ln dash" style="border-color:${getComputedStyle(document.body).getPropertyValue('--caut').trim()}"></span>65% RH germination floor</span><span class="ki"><span class="ln dash" style="border-color:${getComputedStyle(document.body).getPropertyValue('--risk').trim()}"></span>${cfg.riskAt}% RH Risk threshold</span><span class="ki"><span class="sh"></span>Time at or above 65% RH</span>${bandTxt}</div><canvas id="c-ts"></canvas><div class="cap"><small>Temperature and RH over the logged period, ${logState.offset?'times as recorded ('+logState.offset+')':'times as recorded in the file'}. RH is read on the left axis and temperature on the right.</small></div></div>
+  ch.innerHTML=`<div class="chart"><div class="key"><span class="ki"><span class="ln" style="border-color:${getComputedStyle(document.body).getPropertyValue('--chart-rh').trim()}"></span>RH % (left axis)</span><span class="ki"><span class="ln" style="border-color:${getComputedStyle(document.body).getPropertyValue('--chart-temp').trim()}"></span>Temperature (right axis, ${st.F?'°F':'°C'})</span><span class="ki"><span class="ln dash" style="border-color:${getComputedStyle(document.body).getPropertyValue('--caut').trim()}"></span>65% RH germination floor</span><span class="ki"><span class="ln dash" style="border-color:${getComputedStyle(document.body).getPropertyValue('--risk').trim()}"></span>${cfg.riskAt}% RH Risk threshold</span><span class="ki"><span class="sh"></span>Time at or above 65% RH</span>${bandTxt}</div><canvas id="c-ts"></canvas><div class="cap"><small>Temperature and RH over the logged period, ${logState.offset?'times as recorded ('+logState.offset+')':'times as recorded in the file'}. RH is read on the left axis and temperature on the right.</small></div></div>
   <div class="chart"><canvas id="c-hist"></canvas><div class="cap"><small>Distribution of RH readings, 2% bins. Marked: 65%, 70% and 80% RH.</small></div></div>
   <div class="chart"><canvas id="c-day"></canvas><div class="cap"><small>Daily RH swing (minimum to maximum each day). The dashed line is 10% RH, the threshold used for the fluctuation count.</small></div></div>`;
   const css=k=>getComputedStyle(document.body).getPropertyValue(k).trim();
-  const mute=css('--mute'),line=css('--line'),acc=css('--acc'),caut=css('--caut'),risk=css('--risk'),trk=css('--trk'),tmp=css('--temp'),good=css('--good');
+  const mute=css('--mute'),line=css('--line'),rhColor=css('--chart-rh'),caut=css('--caut'),risk=css('--risk'),trk=css('--trk'),tempColor=css('--chart-temp'),good=css('--good');
   const setup=(id,h)=>{const cv=$(id),w=cv.clientWidth||600,dpr=window.devicePixelRatio||1;cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext('2d');x.scale(dpr,dpr);return{x,w,h}};
   {
     const {x,w,h}=setup('c-ts',240),rows=seriesBuckets(logState.rows,Math.max(200,Math.floor(w*1.5)));
@@ -638,10 +638,10 @@ function drawLogCharts(){
     x.strokeStyle=caut;x.beginPath();x.moveTo(padL,yR(65));x.lineTo(w-padR,yR(65));x.stroke();
     x.strokeStyle=risk;x.beginPath();x.moveTo(padL,yR(cfg.riskAt));x.lineTo(w-padR,yR(cfg.riskAt));x.stroke();
     x.setLineDash([]);
-    x.strokeStyle=acc;x.lineWidth=1.2;x.beginPath();
+    x.strokeStyle=rhColor;x.lineWidth=1.2;x.beginPath();
     rows.forEach((r,i)=>{const px=X(r.t);if(i===0){x.moveTo(px,yR(r.rh1));x.lineTo(px,yR(r.rh0))}else{x.lineTo(px,yR(r.rh1));x.lineTo(px,yR(r.rh0))}});
     x.stroke();
-    x.strokeStyle=tmp;x.lineWidth=1.2;x.beginPath();
+    x.strokeStyle=tempColor;x.lineWidth=1.2;x.beginPath();
     let started=false;
     rows.forEach(r=>{if(r.t0==null)return;const px=X(r.t);if(!started){x.moveTo(px,yT(r.t1));started=true}else x.lineTo(px,yT(r.t1));x.lineTo(px,yT(r.t0))});
     x.stroke();
@@ -706,7 +706,7 @@ function render(){
     ['Natural ageing',m.aging,`PI ${yrs(m.PI)} yr`,`How fast organic material breaks down chemically. Lifetime is ${m.LM.toFixed(2)}× the 20 °C, 50% RH reference (published models range from ${m.xs[0].toFixed(2)}× to ${m.xs[4].toFixed(2)}×; see the Information tab). Above 1× is slower ageing and below 1× is faster.`],
     ['Mechanical damage',m.mech,`${m.E.toFixed(1)}% moisture`,'The moisture a wood-like material holds at this condition. Too dry or too damp makes materials shrink, swell, crack or warp. The comfortable range is 5 to 12.5%, rated OK. IPI’s scale has no Good band for this cause.'],
     ['Mould',m.mould,m.tg===null?'None expected':fmtD(m.tg),mouldTxt],
-    ['Metal corrosion',m.metal,`${m.E.toFixed(1)}% moisture`,'Corrosion speeds up as moisture rises. Good under 7.0%, Caution to under 10.5%, Risk at 10.5% or more (IPI bands).']];
+    ['Metal corrosion',m.metal,`${m.E.toFixed(1)}% moisture`,'Corrosion speeds up as moisture rises. Good under 7.0%, OK from 7.0% to under 10.5%, Risk at 10.5% or more (IPI bands).']];
   const NA='Not assessed for this material profile.';
   [['aging',0],['mech',1],['mould',2],['metal',3]].forEach(([k,i])=>{if(m[k]==='na'){rows[i][2]='—';rows[i][3]=NA}});
   if(P.metal==='salt'){rows[3][2]=st.RH.toFixed(0)+'% RH';rows[3][3]='Chloride salts start absorbing water above about 33% RH (calcium chloride) and 35% (magnesium chloride). About 30% is the typical critical RH CCI gives for special metal collections.'}
