@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Collection climate evaluator</title>
 <style>
-:root{--bg:#e9e7e0;--panel:#f6f5f1;--ink:#22262d;--mute:#5a616d;--line:#cbc8bd;--good:#2f6f4f;--caut:#92600f;--risk:#8b1e2d;--acc:#2a5d6e;--temp:#7a4f9e;--trk:#c9c6bb;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#15181c;--panel:#1e2227;--ink:#e6e4de;--mute:#9aa0aa;--line:#363c44;--good:#38865f;--caut:#a8701a;--risk:#b0364a;--acc:#74b4c8;--temp:#b98fd9;--trk:#3a4048;color-scheme:dark}}
+:root{--bg:#e9e7e0;--panel:#f6f5f1;--ink:#22262d;--mute:#5a616d;--line:#cbc8bd;--good:#2f6f4f;--ok:#56677a;--caut:#92600f;--risk:#8b1e2d;--acc:#2a5d6e;--temp:#7a4f9e;--trk:#c9c6bb;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#15181c;--panel:#1e2227;--ink:#e6e4de;--mute:#9aa0aa;--line:#363c44;--good:#38865f;--ok:#62768a;--caut:#a8701a;--risk:#b0364a;--acc:#74b4c8;--temp:#b98fd9;--trk:#3a4048;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 .wrap{max-width:1040px;margin:0 auto;padding:20px 16px 48px}
@@ -39,8 +39,10 @@ input[type=range]:disabled{opacity:.55}
 .ev:first-of-type{border-top:0}
 .ev .n{font-weight:600}
 .chip{color:#fff;text-align:center;border-radius:4px;padding:5px 4px;font-weight:600}
-.chip.good{background:var(--good)}.chip.caut{background:var(--caut)}.chip.risk{background:var(--risk)}
+.chip.good{background:var(--good)}.chip.ok{background:var(--ok)}.chip.caut{background:var(--caut)}.chip.risk{background:var(--risk)}
 .chip.na{background:transparent;color:var(--mute);border:1px dashed var(--line)}
+.ev details summary{cursor:pointer;color:var(--acc);font-size:13px;width:max-content}
+.ev details small{display:block;margin-top:4px}
 .ind{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:3px;padding:4px 6px;text-align:center}
 .pn{margin:-6px 0 12px;display:block}
 .ev .m{font:600 17px Georgia,serif}
@@ -86,7 +88,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 <body>
 <div class="wrap">
 <h1>Collection climate evaluator</h1>
-<p class="lede">Move two sliders and the third is solved. Each temperature and humidity pair is then assessed against published models for chemical ageing, mechanical stress, mould and metal corrosion, and against a setpoint class. These are static ratings for a single condition. For a period, use the Logged data tab and the same models are applied to the whole series.</p>
+<p class="lede">Move two sliders and the third is worked out for you. The temperature and humidity are then rated against published research on chemical ageing, mechanical stress, mould and metal corrosion, and optionally against an ASHRAE control type. This tab rates a single condition. To rate a whole period, use the Logged data tab.</p>
 
 <div class="tabs" role="tablist" aria-label="Sections">
 <button class="tab" id="tab-eval" role="tab" aria-selected="true" aria-controls="panel-eval">Evaluate</button>
@@ -104,10 +106,10 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 <option value="30">30 yr — magnetic media, rubber, foam</option>
 </select>
 <label class="lab" for="ea">Activation energy</label><input type="number" id="ea" value="100" min="60" max="130" step="1"><small>kJ/mol</small>
-<label class="lab" for="buf">Mould margin</label><input type="number" id="buf" value="5" min="0" max="20" step="1"><small>% RH below 65%</small>
+<label class="lab" for="buf">Mould margin</label><input type="number" id="buf" value="5" min="0" max="20" step="1"><small>% RH below 65% that still counts as Caution</small>
 </div>
 <div class="buf">
-<label class="lab" for="ash">Setpoint class</label><select id="ash"><option value="none">None — material ratings only</option><option value="AA">ASHRAE AA</option><option value="A1">ASHRAE A1</option><option value="A2">ASHRAE A2</option><option value="B">ASHRAE B</option><option value="C">ASHRAE C</option><option value="D">ASHRAE D</option></select>
+<label class="lab" for="ash">Control type</label><select id="ash"><option value="none">None — material ratings only</option><option value="AA">ASHRAE AA</option><option value="A1">ASHRAE A1</option><option value="A2">ASHRAE A2</option><option value="B">ASHRAE B</option><option value="C">ASHRAE C</option><option value="D">ASHRAE D</option></select>
 <label class="lab" for="baseT">Annual baseline</label><input type="number" id="baseT" value="20" step="0.5"><small>°C</small><input type="number" id="baseRH" value="50" step="1"><small>% RH</small><button id="usecur">Use current condition</button><button id="usemean" disabled>Use series mean</button>
 </div>
 <small class="pn" id="pnote"></small><small class="pn" id="derived-note"><span class="derived" id="dnote">Class and activation energy are set by the material profile; adjust them freely.</span></small>
@@ -144,7 +146,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 <button data-sc="20,30,Dry 20 °C/30%">Dry 20 °C/30%</button>
 </div>
 <div class="buf"><button id="save">Save current</button> <button id="clear">Clear</button> <button id="exp">Export CSV</button></div>
-<div class="tw"><table><thead><tr><th>Label</th><th id="th-t">T</th><th>RH %</th><th id="th-dp">DP</th><th>PI (yr)</th><th>Life ×</th><th>EMC %</th><th>Margin to 65%</th><th>Ratings</th></tr></thead><tbody id="rec"></tbody></table></div>
+<div class="tw"><table><thead><tr><th>Label</th><th id="th-t">T</th><th>RH %</th><th id="th-dp">DP</th><th>PI (yr)</th><th>Lifetime ×</th><th>Moisture %</th><th>Margin to 65%</th><th>Ratings</th></tr></thead><tbody id="rec"></tbody></table></div>
 <p id="empty"><small>No saved conditions yet. Set conditions, or click a scenario above.</small></p>
 </section>
 </div>
@@ -162,16 +164,36 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 
 <div id="panel-info" role="tabpanel" aria-labelledby="tab-info" hidden>
 <section aria-labelledby="h-info">
-<h2 id="h-info">Models, sources and limits</h2>
+<h2 id="h-info">How this tool works</h2>
+<p>The tool compares a temperature and humidity reading, or a whole logger record, with published research on how collections deteriorate. It rates each cause of damage separately. It is a screening aid that shows where to look more closely. It does not replace conservator advice.</p>
+
+<h3>Terms in plain words</h3>
+<ul>
+<li><b>Relative humidity (RH):</b> how much water vapour the air holds compared with the most it could hold at that temperature. Warm air holds more, so RH drops when a room warms, even if no moisture has left.</li>
+<li><b>Dew point:</b> the temperature at which the air would be saturated and water would condense on a cold surface. It follows the actual moisture in the air, so it stays put when a room warms or cools while RH moves.</li>
+<li><b>Moisture content (EMC):</b> the water, as a percentage of its weight, that a wood-like material settles at when held at a given temperature and RH.</li>
+<li><b>Lifetime multiplier:</b> how long a material lasts compared with steady 20 °C and 50% RH. 2× means twice as long. 0.5× means half as long.</li>
+<li><b>PI and TWPI:</b> the Image Permanence Institute’s Preservation Index is one figure for how slowly organic material decays at steady conditions. Higher is better. TWPI is the same figure averaged over a period of changing conditions.</li>
+<li><b>Activation energy:</b> how strongly the speed of ageing depends on temperature. A higher value means cooling helps more.</li>
+</ul>
 
 <h3>How to read the ratings</h3>
-<p>Every row uses one scale: <b>Good</b>, <b>Caution</b>, <b>Risk</b>, or <b>N/A</b> when the material profile says the cause does not apply. Provenance of the middle band: IPI’s bands are Good/OK/Risk and CCI’s mould guidance uses Watch; both middle bands map to Caution here. Rows with an <b>Indicator</b> badge carry no rating: they are context, not verdicts.</p>
+<p>Each cause of damage is rated <b>Good</b>, <b>Caution</b> or <b>Risk</b>. It shows <b>N/A</b> where the material profile says the cause does not apply. IPI calls its middle band OK and CCI (the Canadian Conservation Institute) calls its middle band Watch. Both show here as Caution, except for mechanical damage, where IPI’s only passing band shows as OK. Rows marked <b>Indicator</b> give context and carry no rating.</p>
+
+<h3>The checks</h3>
+<ul>
+<li><b>Chemical ageing.</b> Heat and humidity speed up the slow chemical breakdown of paper, textile, film and other organic material. The rating uses IPI’s PI: 75 or more is Good, 45 to under 75 is Caution, and under 45 is Risk. The lifetime multiplier comes from five published models. They agree between 30% and 60% RH and drift apart outside that range, where there is little data.</li>
+<li><b>Mechanical damage.</b> Wood, paper, leather and similar materials take up and lose moisture as humidity changes, so they swell and shrink. Too dry or too damp strains them. The check uses the moisture content they would settle at. The comfortable range is 5 to 12.5%. IPI has no Good band for this cause, so in range is rated OK and outside it is Risk. A single reading cannot show fluctuation. The Logged data tab can.</li>
+<li><b>Mould.</b> The rating follows CCI data on how long mould takes to start at each RH. Below 65% RH, spores do not germinate (start to grow) within 1000 days. Germination takes about 600 days at 65%, 50 days at 70%, 12 days at 75% and 1.5 days at 80%. Visible growth takes longer: about 500, 130, 35 and 12 days at the same points. These figures apply to surfaces rich in protein, starch or sugar, such as leather, skin, parchment and sized or soiled textile. For those, Risk starts at 70% RH and Caution at 65%, widened by your safety margin. For clean paper, textile and wood, CCI puts visible growth at about 80 to 85% RH, so Risk starts at 80%. CCI fitted its figures near 25 °C and treats them as cautious at other temperatures. A sustained drop below 65% RH ends the growth cycle. A second model, Sedlbauer’s, puts the limit near 76% RH at 20 °C. It is shown for reference and does not set the rating, because it is less cautious for museum materials.</li>
+<li><b>Metal corrosion.</b> Corrosion speeds up as moisture rises, sharply above 75% RH. The rating uses moisture content: under 7.0% is Good, 7.0 to under 10.5% is Caution, and 10.5% or more is Risk. Salts left on salt-contaminated or archaeological metal absorb water at low RH (calcium chloride at 33%, magnesium chloride at 35%). For these, Risk starts at 33% and Caution at 30%, the typical critical RH CCI gives for special metal collections.</li>
+<li><b>Gelatin blocking.</b> CCI advises keeping RH below 60% so photographic gelatin layers do not stick together. Above 60% is Caution and 75% or more is Risk.</li>
+</ul>
 
 <h3>Lifetime models at the current condition</h3>
 <div id="models"></div>
 
-<h3>Setpoint types of control (ASHRAE, as summarised by CCI)</h3>
-<p>CCI now calls these “types of control”, not quality classes: AA, A and B are not better than C or D, they are different specifications with different costs. Each type has four parameters: long-term outer limits, an annual baseline (for permanent collections, the building’s historic annual average — yours to set above), seasonal adjustments from that baseline, and short-term fluctuations plus space gradients. This tool checks the outer limits and the short-term band around your baseline; seasonal adjustments are deliberate slow changes and are not checked.</p>
+<h3>Control types (ASHRAE, as summarised by CCI)</h3>
+<p>These are ready-made specifications for how tightly to hold temperature and RH. CCI calls them types of control, not classes, because AA is not better than D. They are different specifications at different costs. Each has four parts. <b>Outer limits</b> are the range that must never be exceeded. The <b>annual baseline</b> is the long-run average the space holds. For a permanent collection, that is the building’s own historic average, which you set above. <b>Seasonal change</b> is the slow, planned drift from the baseline over the year. <b>Short-term change</b> is the swing allowed over hours or days. This tool checks the outer limits and the short-term swing. It does not check seasonal change.</p>
 <div class="tw"><table><thead><tr><th>Type</th><th>Outer limits (T)</th><th>Outer limits (RH)</th><th>Seasonal T</th><th>Seasonal RH</th><th>Short-term T</th><th>Short-term RH</th></tr></thead><tbody>
 <tr><td>AA</td><td>10–25 °C</td><td>35–65%</td><td>+5/−5 °C</td><td>no change</td><td>±2 °C</td><td>±5%</td></tr>
 <tr><td>A1</td><td>10–25 °C</td><td>35–65%</td><td>+5/−10 °C</td><td>±10%</td><td>±2 °C</td><td>±5%</td></tr>
@@ -180,21 +202,34 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 <tr><td>C</td><td>≤40 °C</td><td>25–75%</td><td>not specified</td><td>not specified</td><td>rarely over 30 °C</td><td>not above 65% for more than X days*</td></tr>
 <tr><td>D</td><td>not specified</td><td>≤75%</td><td>not specified</td><td>not specified</td><td>not specified</td><td>not above 65% for more than X days*</td></tr>
 </tbody></table></div>
-<p><small>* X is the time to visible mould at that RH on CCI’s mould curve — which the Logged data tab computes as mould runs. For logged data, summary bands on the setpoint check are: Risk above 1% of the period outside the long-term outer limits, Caution above 3% outside the short-term band, Good otherwise. CCI warns against claims like “AA most of the time”: scope any claim to a defined period. Cool (8–16 °C), cold (0–8 °C) and frozen (−20–0 °C) storage categories, all at 30–50% RH, are not offered here yet.</small></p>
+<p><small>* X is the time to visible mould at that RH on CCI’s mould curve. The Logged data tab works this out for each mould run. For logged data, the control type check is Risk if more than 1% of the period is outside the outer limits, Caution if less than 97% is within the short-term swing, and Good otherwise. CCI warns against claims such as “AA most of the time”, so state which period a claim covers. Cool (8–16 °C), cold (0–8 °C) and frozen (−20–0 °C) storage, all at 30–50% RH, are not offered yet.</small></p>
 
-<h3>Sources and models</h3>
+<h3>Material profiles</h3>
+<p>A profile switches off checks that do not apply to a material. It also sets the starting lifetime class and activation energy, which you can change. Leather, skin, parchment and sized or soiled textile use the sensitive mould bands. Clean paper, textile and wood use the 80% mould limit. Photographic prints and film use the sensitive mould bands and add gelatin blocking. Clean iron and copper alloys are checked for corrosion only. Salt-contaminated or archaeological metal uses the salt limits above. Plastics, rubber and foam use the 30-year class and 70 kJ/mol (CCI’s range for polyurethane and resin varnish is 60 to 80). The lifetime classes of 1000, 300, 100 and 30 years are CCI’s, and each can be out by up to three times.</p>
+<p>Not included: unstable glass (CCI’s text and table disagree on which side of about 40% and 55% RH causes weeping and crizzling), lead, zinc and bismuth alloys (they depend on air pollutants), and minerals such as pyrite (the sources read gave no figures).</p>
+
+<h3>Logged data</h3>
+<p>Load a logger CSV. Nothing leaves your browser. The tool finds the time, temperature and humidity columns from their headings. Dates are read as day/month/year unless a number above 12 appears in the middle position, which switches to month/day/year. Times are used as recorded. The tool reports the typical interval between readings and the largest gap.</p>
 <ul>
-<li><b>Dew point and RH:</b> Magnus form, <code>γ = 17.62·x / (243.12 + x)</code> with x in °C. Dew point cannot exceed air temperature, so RH is capped at 100%.</li>
-<li><b>Preservation Index (PI):</b> the IPI form of the Arrhenius rate fitted to cellulose triacetate (Reilly 1995, as set out by Padfield 2004): <code>k = RH × 5.9×10¹² × exp(−90300 / (8.314·T<sub>K</sub>))</code>, <code>PI = 1/k</code> years. Ratings use IPI’s bands for the Dew Point Calculator: 75 or more Good, 45 to under 75 Caution, under 45 Risk. Output can differ from IPI’s own tool by a few percent (at 20 °C and 50% RH this gives about 42 years, where the IPI tool showed 44), so treat it as the same model family, not a replica. IPI’s rate is linear in RH: a power law with index 1. Where one lifetime form is needed, this tool uses CCI’s default instead, the Michalski power of 1.3.</li>
-<li><b>Lifetime multipliers:</b> five published models, each normalised to 1 at 20 °C and 50% RH, using the equations in CCI’s explanation of its lifetime calculator: Sebera 1994 (isoperms; he had no data for the RH effect and took lifetime as proportional to RH, a power law with index 1 — the linear form; his activation energies of 125 to 146 kJ/mol are above currently accepted values, so his isoperms exaggerate the benefit of cold storage; plotted here at 125 kJ/mol), Reilly et al. 1995 (acetate film fit), Michalski 2000 (RH power of 1.3, adjustable activation energy), Strlič et al. 2015 (paper, 119 kJ/mol) and Tétreault et al. 2023 (modern printing paper, adjustable activation energy). The headline lifetime multiplier uses CCI’s default form, the Michalski power of 1.3. Checked against CCI’s published table of RH effects at 20 °C: the five published models agree closely between 30% and 60% RH, but diverge below 20% and above 60%, where there is little data to choose between them. Benchmark lifetimes of 1000, 300, 100 and 30 years are CCI’s material classes and are uncertain by up to a factor of three. The headline Natural ageing rating still uses IPI’s PI bands.</li>
-<li><b>EMC:</b> Hailwood–Horrobin sorption model with the Simpson (1998, USDA Forest Products Laboratory) coefficients for wood. Cellulosic collection materials such as paper and textile differ in absolute value, so use it as an index of dimensional stress. Mechanical and metal bands are IPI’s: mechanical within 5 to 12.5% EMC is Caution (IPI’s OK band), outside is Risk; metal Good under 7.0, Caution to under 10.5, Risk at 10.5 and above.</li>
-<li><b>Mould:</b> the rating follows CCI’s time-to-mould data (Table 1 of its explanation of the mould and lifetime calculators), which is the more cautious source for museum organic materials. Outer limits for surfaces rich in protein, starch or sugar (leather, skin, parchment, sized or dirty textile, gelatin): no germination within 1000+ days at 64% RH and below; at 65% RH germination in about 600 days and visible growth in about 500; at 70% RH about 50 and 130 days; at 75% about 12 and 35; at 80% about 1.5 and 12; at 90 to 100% RH 2 to 3 days. So Risk is set from 70% RH, Caution from 65% RH, and Good below — with your safety margin widening the Caution band below 65% RH. Clean paper, textile and wood keep CCI’s 80 to 85% RH onset for visible growth (Risk from 80% RH), but the 65% RH germination floor still applies. Sedlbauer’s Lowest Isopleth for Mould (LIM 0, about 75.6% RH at 20 °C) is shown for reference only: for museum organic materials it is the less cautious of the two sources and it no longer sets the rating. The CCI curves were fitted near 25 °C and are a cautious generalisation for other temperatures. CCI treats a sustained drop below 65% RH as ending the growth cycle.</li>
-<li><b>Material profiles:</b> presets drawn from CCI’s “Incorrect relative humidity” tables, which classify sensitivity by material and condition. Choosing a profile switches off ratings that do not apply, and resets the material class and activation energy, which you can then adjust. Leather, skin, parchment and sized or dirty textile use the CCI sensitive-surface bands: Caution from 65% RH, Risk from 70%. Clean paper, textile and wood use CCI’s 80 to 85% RH onset for visible growth, with Risk set at 80%. Photographic gelatin adds a blocking check: Caution above 60% RH (CCI) and Risk from 75%; gelatin is protein, so the mould bands are the sensitive ones. Clean iron and copper alloys use the IPI EMC bands. Salt-contaminated or archaeological metal uses Risk from 33% RH (calcium chloride deliquesces at 33%, magnesium chloride at 35%) and Caution from 30%, the typical critical RH CCI gives for special metal collections. Plastics, rubber and foam use the 30-year class and 70 kJ/mol, inside CCI’s 60 to 80 kJ/mol range for polyurethane and resin varnish. Not included: unstable glass (CCI’s text and table disagree on which side of about 40% and 55% RH causes weeping and crizzling), lead, zinc and bismuth alloys (pollutant-dependent) and minerals such as pyrite (no figures in the sources read).</li>
-<li><b>Logged data:</b> columns are matched by heading keywords; timestamps are parsed as ISO, or as day/month/year when no value above 12 appears in the first place (month/day is used when one does), and are analysed as wall-clock times recorded in the file. Samples are counted at the median sampling interval; gaps longer than twice that are reported. <b>Mould runs</b> are continuous periods at or above 65% RH: a dip below 65% RH is forgiven for up to 3 hours, since a short dip does not dry the material, while a longer drop counts as ending the growth cycle on CCI’s rule. Each run is compared with CCI’s germination and visible-growth times at the run’s peak RH. <b>Chemical ageing</b> accumulates as equivalent time at 20 °C and 50% RH on CCI’s default lifetime form; the time-weighted preservation index (TWPI) is the same integration on IPI’s PI, the harmonic mean of PI over time as IPI defines it. <b>Setpoint checks</b> report time outside the short-term band around your annual baseline and outside the long-term outer limits of the chosen type of control. <b>Condensation</b> reports hours at or above 95% and 90% RH and the highest dew point in the series. <b>Pest bands</b> (below 10 °C, 15 °C, 20 °C) are indicators from the clothes-moth literature, not predictors.</li>
+<li><b>Mould runs:</b> a run is a stretch at or above 65% RH. A dip below 65% of up to 3 hours is ignored, because a short dip does not dry the material. A longer dip ends the run, following CCI. Each run is compared with CCI’s germination and visible-growth times at its peak RH.</li>
+<li><b>Chemical ageing:</b> adds up ageing over the period as equivalent time at steady 20 °C and 50% RH, using the same form as the headline lifetime multiplier. TWPI averages PI over the period and gives the worst conditions the most weight.</li>
+<li><b>Mechanical damage and metal corrosion:</b> time spent in each moisture band. Mechanical damage is Risk if more than 5% of the time is outside 5 to 12.5%, and OK otherwise. Metal corrosion is Risk if more than 0.5% of the period is damp (75% RH or more) or in the highest moisture band.</li>
+<li><b>Control type check:</b> time within the short-term swing around your baseline, and time outside the outer limits.</li>
+<li><b>Condensation:</b> hours at 95% RH or more and at 90% or more, plus the highest dew point recorded.</li>
+<li><b>Pest indicators:</b> time below 10 °C, from 10 to 15 °C, from 15 to 20 °C and above 20 °C. Clothes moths stop laying eggs below about 10 °C, breed less below about 15 °C, and can produce up to three generations a year above 20 °C. Treat these as guides, not predictions.</li>
 </ul>
 
 <h3>Limits</h3>
-<p>The static ratings above have no time component; the logged analysis adds one, but it is still a summary: IPI’s Days to Mould and the VTT mould index track wetness history more exactly than the run analysis here, and anything acting on the result should first be judged against the raw series. Mould also needs a viable substrate and spores, and these curves describe the humidity condition only. Exports carry a provenance footer naming the model forms used.</p>
+<p>A single reading has no time dimension. The logged analysis adds one, but it is still a summary. IPI’s Days to Mould and the VTT mould index follow wetness history more closely than the run analysis does, so check any decision against the raw series. Mould also needs spores and something to grow on, and these curves describe humidity only. Exports carry a note naming the model forms used.</p>
+
+<details><summary>Equations and sources</summary>
+<ul>
+<li><b>Dew point and RH:</b> Magnus form, <code>γ = 17.62·x / (243.12 + x)</code> with x in °C. Dew point cannot exceed air temperature, so RH is capped at 100%.</li>
+<li><b>PI:</b> IPI’s form of the Arrhenius rate fitted to cellulose triacetate (Reilly 1995, as set out by Padfield 2004): <code>k = RH × 5.9×10¹² × exp(−90300 / (8.314·T<sub>K</sub>))</code>, <code>PI = 1/k</code> years. At 20 °C and 50% RH it gives about 42 years where IPI’s own tool showed 44, so treat it as the same model family, not a replica. IPI’s rate rises in direct proportion to RH. Where one lifetime form is needed, this tool uses CCI’s default instead (Michalski’s RH power of 1.3).</li>
+<li><b>Lifetime multipliers:</b> equations from CCI’s explanation of its lifetime calculator, each set to 1 at 20 °C and 50% RH: Sebera 1994 (lifetime in direct proportion to RH, at 125 kJ/mol; his activation energies are above currently accepted values, so his charts overstate the benefit of cold storage), Reilly et al. 1995 (acetate film), Michalski 2000 (RH power of 1.3, adjustable activation energy, used for the headline figure), Strlič et al. 2015 (paper, 119 kJ/mol) and Tétreault et al. 2023 (modern printing paper, adjustable activation energy). Checked against CCI’s published table of RH effects at 20 °C.</li>
+<li><b>Moisture content:</b> Hailwood–Horrobin sorption model with Simpson (1998, USDA Forest Products Laboratory) coefficients for wood. Paper and textile differ in absolute value, so read it as an index of strain, not a measurement. The bands are IPI’s.</li>
+<li><b>Sedlbauer mould limit (LIM 0):</b> <code>RH = 100 × (0.02633·cosh(0.10083·(T − 30)) + 0.7153)</code>. Reference only.</li>
+</ul></details>
 <p class="foot">Built from published models for decision support. It is not a substitute for conservator judgement or IPI’s own tools.</p>
 </section>
 </div>
@@ -222,10 +257,10 @@ const lim=(T,c)=>100*(.02633*Math.cosh(.10083*(T-30))+c);
 const PROF={
  gen:{name:'General screening',note:'All ratings apply. Use this for mixed or unknown material. Mould uses the CCI bands for sensitive surfaces.'},
  skin:{name:'Leather, skin, parchment, sized or dirty textile',metal:'na',note:'Surfaces rich in protein, starch or sugar: Risk from 70% RH, where CCI expects germination in about 50 days. Metal corrosion is not assessed.'},
- clean:{name:'Clean paper, textile or wood',mould:'clean',metal:'na',note:'CCI puts visible mould on clean cellulosic material at about 80 to 85% RH and above, so Risk is set at 80%. Spores can still germinate above 65% RH, so Caution applies from 65% minus your margin. Metal corrosion is not assessed.'},
+ clean:{name:'Clean paper, textile or wood',mould:'clean',metal:'na',note:'CCI puts visible mould on clean plant-fibre material at about 80 to 85% RH and above, so Risk is set at 80%. Spores can still germinate above 65% RH, so Caution applies from 65% minus your margin. Metal corrosion is not assessed.'},
  photo:{name:'Photographic prints and film (gelatin)',metal:'na',gel:1,note:'Gelatin is protein, so mould uses the sensitive-surface bands. Adds gelatin blocking: CCI advises avoiding RH above 60%. Metal corrosion is not assessed. Set the material class to suit the film or print type.'},
- iron:{name:'Clean iron or copper alloy',aging:'na',mech:'na',mould:'na',note:'Only corrosion is assessed, on the IPI EMC bands. Above 75% RH all corrosion accelerates and hand salts deliquesce.'},
- salt:{name:'Salt-contaminated or archaeological iron or copper alloy',aging:'na',mech:'na',mould:'na',metal:'salt',note:'Risk from 33% RH, where calcium chloride deliquesces, and Caution from 30%, the typical critical RH CCI gives for special metal collections.'},
+ iron:{name:'Clean iron or copper alloy',aging:'na',mech:'na',mould:'na',note:'Only corrosion is assessed. Above 75% RH all corrosion speeds up, and salts left by handling absorb water.'},
+ salt:{name:'Salt-contaminated or archaeological iron or copper alloy',aging:'na',mech:'na',mould:'na',metal:'salt',note:'Risk from 33% RH, where calcium chloride starts absorbing water, and Caution from 30%, the typical critical RH CCI gives for special metal collections.'},
  plas:{name:'Plastics, rubber and polyurethane foam',bench:30,ea:70,mech:'na',mould:'na',metal:'na',note:'Chemical lifetime uses the 30-year class and 70 kJ/mol (CCI range 60 to 80). Other ratings are not assessed.'}
 };
 const ASH={
@@ -269,12 +304,12 @@ function metrics(T,RH,buf){
   if(P.metal==='salt')metal=RH>=33?'risk':RH>=30?'caut':'good';
   return{PI,LM,lm,xs,E,l0,mg,tg,tf,watch,riskAt,
     aging:na('aging')?'na':(PI>=75?'good':PI>=45?'caut':'risk'),
-    mech:na('mech')?'na':((E>=5&&E<=12.5)?'caut':'risk'),
+    mech:na('mech')?'na':((E>=5&&E<=12.5)?'ok':'risk'),
     mould:na('mould')?'na':mould,
     metal:na('metal')?'na':metal,
     gel:P.gel?(RH>=75?'risk':RH>60?'caut':'good'):null};
 }
-const L={good:'Good',caut:'Caution',risk:'Risk',na:'N/A'};
+const L={good:'Good',ok:'OK',caut:'Caution',risk:'Risk',na:'N/A'};
 const yrs=v=>v>=1000?'over 1000':v>=100?Math.round(v):v.toFixed(1);
 const buf=()=>cl(parseFloat($('buf').value)||0,0,20);
 const PROV='Collection climate evaluator — CCI default lifetime form (Michalski 2000, RH^1.3), CCI mould Table 1, IPI PI/EMC bands, ASHRAE types of control as summarised by CCI. Generated '+new Date().toISOString().slice(0,10)+'.';
@@ -498,23 +533,23 @@ function logVerdicts(a,P){
   if(na('aging'))out.push(['Chemical ageing','na','—','Not assessed for this material profile.']);
   else{
     const chip=a.twpi>=75?'good':a.twpi>=45?'caut':'risk';
-    out.push(['Chemical ageing',chip,`TWPI ${yrs(a.twpi)} yr`,`Time-weighted preservation index (IPI). At this rate a ${a.bench}-year class material has about ${yrs(a.life)} years left; exposure runs ${a.ratio.toFixed(2)}× the rate of steady 20 °C and 50% RH.`]);
+    out.push(['Chemical ageing',chip,`TWPI ${yrs(a.twpi)} yr`,`Time-weighted preservation index (IPI), an average of PI over the period. If these conditions continued, a ${a.bench}-year material would last about ${yrs(a.life)} years. Ageing ran at ${a.ratio.toFixed(2)}× the speed of steady 20 °C and 50% RH.`]);
   }
   if(na('mech'))out.push(['Mechanical damage','na','—','Not assessed for this material profile.']);
   else{
     const outBand=a.eGood+a.eRisk;
-    const chip=outBand>0.05*a.periodH?'risk':'caut';
-    const val=`In EMC band ${(100*a.eOk/Math.max(1,a.eOk+a.eGood+a.eRisk)).toFixed(0)}%`;
-    out.push(['Mechanical damage',chip,val,`Time outside the 5 to 12.5% EMC band: ${hoursTxt(a.eGood)} below, ${hoursTxt(a.eRisk)} above.`]);
+    const chip=outBand>0.05*a.periodH?'risk':'ok';
+    const val=`In moisture range ${(100*a.eOk/Math.max(1,a.eOk+a.eGood+a.eRisk)).toFixed(0)}%`;
+    out.push(['Mechanical damage',chip,val,`Time outside the 5 to 12.5% moisture range: ${hoursTxt(a.eGood)} below, ${hoursTxt(a.eRisk)} above.`]);
   }
   if(na('metal'))out.push(['Metal corrosion','na','—','Not assessed for this material profile.']);
   else if(P.metal==='salt'){
     const chip=a.hSaltR>0?'risk':a.hSaltW>0?'caut':'good';
-    out.push(['Metal corrosion',chip,`${hTxt(a.hSaltR)} ≥33% RH`,`Chloride salts deliquesce above about 33% RH. Hours at or above 30% RH: ${hTxt(a.hSaltW)}.`]);
+    out.push(['Metal corrosion',chip,`${hTxt(a.hSaltR)} ≥33% RH`,`Chloride salts start absorbing water above about 33% RH. Hours at or above 30% RH: ${hTxt(a.hSaltW)}.`]);
   }else{
     const riskH=Math.max(a.hDamp,a.mRisk),thr=0.005*a.periodH;
     const chip=riskH>=thr?'risk':riskH>0?'caut':a.mOk>=0.5*a.periodH?'caut':'good';
-    out.push(['Metal corrosion',chip,`${hTxt(a.hDamp)} ≥75% RH`,`Damp above 75% RH accelerates corrosion. EMC in the metal bands: under 7.0 ${hTxt(a.mGood)}, 7.0 to under 10.5 ${hTxt(a.mOk)}, 10.5 and above ${hTxt(a.mRisk)}.`]);
+    out.push(['Metal corrosion',chip,`${hTxt(a.hDamp)} ≥75% RH`,`Damp above 75% RH accelerates corrosion. Time by moisture content: under 7.0% ${hTxt(a.mGood)}, 7.0 to under 10.5 ${hTxt(a.mOk)}, 10.5 and above ${hTxt(a.mRisk)}.`]);
   }
   if(a.hGelW||a.hGelR)out.push(['Gelatin blocking',a.hGelR>0?'risk':a.hGelW>0?'caut':'good',`${hTxt(a.hGelW)} above 60% RH`,`CCI advises avoiding RH above 60% to limit sticking. Hours at or above 75% RH: ${hTxt(a.hGelR)}.`]);
   if(a.ashName){
@@ -527,7 +562,7 @@ function logVerdicts(a,P){
 function logIndicators(a,P){
   const hTxt=hoursTxt;
   const out=[];
-  out.push(['RH fluctuation','mean swing '+a.swMean.toFixed(1)+'% RH',`Maximum daily swing ${a.swMax.toFixed(1)}% RH; ${a.swDays?Math.round(100*a.swOver/a.swDays):0}% of days swing more than 10% RH. CCI's proofed-fluctuation test needs a vulnerability class for the object, so treat this as an indicator.`]);
+  out.push(['RH fluctuation','mean swing '+a.swMean.toFixed(1)+'% RH',`Maximum daily swing ${a.swMax.toFixed(1)}% RH; ${a.swDays?Math.round(100*a.swOver/a.swDays):0}% of days swing more than 10% RH. CCI’s test for safe fluctuation depends on how fragile the object is, so treat this as a guide only.`]);
   out.push(['Condensation',a.maxDP!=null?'peak dew point '+a.maxDP.toFixed(1)+' °C':'no dew point',`Hours at or above 95% RH: ${hTxt(a.h95)}; at or above 90% RH: ${hTxt(a.h90)}.${a.maxDP!=null?' Any surface at or below '+a.maxDP.toFixed(1)+' °C would have condensed on the worst reading.':''}`]);
   out.push(['Pest activity',hTxt(a.pest.hot)+' above 20 °C',`Clothes moth egg-laying stops below 10 °C (${hTxt(a.pest.cold)} here), reproduction drops below about 15 °C (${hTxt(a.pest.mild)} at 10 to 15 °C), and above 20 °C up to three generations a year are possible (${hTxt(a.pest.warm)} at 15 to 20 °C, ${hTxt(a.pest.hot)} at 20 °C and above).`]);
   return out;
@@ -653,6 +688,7 @@ function drawLogCharts(){
   }
 }
 
+const openRows=new Set();
 function render(){
   const m=metrics(st.T,st.RH,buf());
   const cfg={t:[RNG.t,st.T],dp:[RNG.dp,st.DP]};
@@ -660,20 +696,20 @@ function render(){
   $('s-rh').value=st.RH;
   $('v-t').textContent=fmt(st.T);$('v-dp').textContent=fmt(st.DP);$('v-rh').textContent=st.RH.toFixed(1)+'%';
   for(const k of ['t','rh','dp']){$('s-'+k).disabled=st.mode===k;$('r-'+k).classList.toggle('solved',st.mode===k)}
-  const l0line=`Sedlbauer LIM 0 is ${m.l0.toFixed(1)}% RH at this temperature; it is the less cautious source for museum organic materials and no longer sets this rating.`;
-  const ct=m.tg===null?'CCI expects no germination within 1000+ days at 64% RH and below.':`CCI: earliest germination about ${fmtD(m.tg)}, visible growth by about ${fmtD(m.tf)}.`;
+  const l0line=`A second model (Sedlbauer) puts the limit near ${m.l0.toFixed(0)}% RH at this temperature. It is less cautious for museum materials, so it is shown for reference only.`;
+  const ct=m.tg===null?'CCI expects no spores to germinate at 64% RH or below.':`CCI: spores germinate in about ${fmtD(m.tg)} and growth is visible by about ${fmtD(m.tf)}.`;
   const P=PROF[st.prof];
   let mouldTxt;
-  if(P.mould==='clean')mouldTxt=`Clean paper, textile and wood: visible growth needs about 80 to 85% RH (CCI), so Risk is set at 80% and Caution from ${m.watch}% RH. Spores can still germinate above 65% RH. ${ct} ${l0line}`;
-  else mouldTxt=`${ct} On surfaces rich in protein, starch or sugar — leather, skin, parchment, sized or dirty textile — CCI's data give visible mould in about 100 days at 70% RH, 10 days at 80% and 2 days at 90 to 100%, and germination in about 50 days at 70% RH and 600 days at 65%. Risk is set from ${m.riskAt}% RH and Caution from ${m.watch}% RH. ${l0line}`;
+  if(P.mould==='clean')mouldTxt=`Clean paper, textile and wood need about 80 to 85% RH before mould shows (CCI), so Risk starts at 80% and Caution at ${m.watch}% RH. Spores can still germinate above 65% RH. ${ct} ${l0line}`;
+  else mouldTxt=`${ct} Leather, skin, parchment and sized or soiled textile grow mould fastest: germination takes about 50 days at 70% RH and 600 days at 65% (CCI). Risk starts at ${m.riskAt}% RH and Caution at ${m.watch}% RH. ${l0line}`;
   const rows=[
-    ['Natural ageing',m.aging,`PI ${yrs(m.PI)} yr`,`Chemical decay of organic materials. Lifetime multiplier ${m.LM.toFixed(2)}× on CCI's default form (Michalski 2000, RH power of 1.3); the five published models span ${m.xs[0].toFixed(2)}× to ${m.xs[4].toFixed(2)}× here (table on the Information tab).`],
-    ['Mechanical damage',m.mech,`EMC ${m.E.toFixed(1)}%`,'Swelling and shrinkage of hygroscopic materials. IPI OK band 5 to 12.5% EMC, shown here as Caution.'],
+    ['Natural ageing',m.aging,`PI ${yrs(m.PI)} yr`,`How fast organic material breaks down chemically. Lifetime is ${m.LM.toFixed(2)}× the 20 °C, 50% RH reference (published models range from ${m.xs[0].toFixed(2)}× to ${m.xs[4].toFixed(2)}×; see the Information tab). Above 1× is slower ageing and below 1× is faster.`],
+    ['Mechanical damage',m.mech,`${m.E.toFixed(1)}% moisture`,'The moisture a wood-like material holds at this condition. Too dry or too damp makes materials shrink, swell, crack or warp. The comfortable range is 5 to 12.5%, rated OK. IPI’s scale has no Good band for this cause.'],
     ['Mould',m.mould,m.tg===null?'None expected':fmtD(m.tg),mouldTxt],
-    ['Metal corrosion',m.metal,`EMC ${m.E.toFixed(1)}%`,'Good under 7.0, Caution to under 10.5, Risk at 10.5 and above (IPI bands).']];
+    ['Metal corrosion',m.metal,`${m.E.toFixed(1)}% moisture`,'Corrosion speeds up as moisture rises. Good under 7.0%, Caution to under 10.5%, Risk at 10.5% or more (IPI bands).']];
   const NA='Not assessed for this material profile.';
   [['aging',0],['mech',1],['mould',2],['metal',3]].forEach(([k,i])=>{if(m[k]==='na'){rows[i][2]='—';rows[i][3]=NA}});
-  if(P.metal==='salt'){rows[3][2]=st.RH.toFixed(0)+'% RH';rows[3][3]='Chloride salts deliquesce above about 33% RH (calcium chloride) and 35% (magnesium chloride). About 30% is the typical critical RH CCI gives for special metal collections.'}
+  if(P.metal==='salt'){rows[3][2]=st.RH.toFixed(0)+'% RH';rows[3][3]='Chloride salts start absorbing water above about 33% RH (calcium chloride) and 35% (magnesium chloride). About 30% is the typical critical RH CCI gives for special metal collections.'}
   if(m.gel)rows.push(['Gelatin blocking',m.gel,st.RH.toFixed(0)+'% RH','CCI advises avoiding RH above 60% to limit sticking of gelatin layers. Damp, 75% and above, is the highest risk.']);
   const AS=ASH[ctl.ash];
   if(AS){
@@ -686,13 +722,17 @@ function render(){
     if(shortR)bits.push(`RH ${Math.abs(st.RH-ctl.baseRH).toFixed(1)}% from baseline`);
     if(shortT)bits.push(`T ${Math.abs(st.T-ctl.baseT).toFixed(1)} °C from baseline`);
     rows.push(['Setpoint ('+AS.name+')',chip,bits.length?bits.join(', '):'Within band',
-      `ASHRAE ${AS.name}: ${AS.desc}. Short-term band around ${ctl.baseT.toFixed(0)} °C / ${ctl.baseRH.toFixed(0)}% RH: ${AS.dT!=null?'±'+AS.dT+' °C':'not specified'}, ${AS.dRH!=null?'±'+AS.dRH+'% RH':'not specified'}. ${(outT||outR)?'Outside the long-term outer limits. ':''}Seasonal adjustments are not checked here. Material ceilings are rated separately above.`]);
+      `ASHRAE ${AS.name}: ${AS.desc}. Allowed swing around ${ctl.baseT.toFixed(0)} °C / ${ctl.baseRH.toFixed(0)}% RH: ${AS.dT!=null?'±'+AS.dT+' °C':'not specified'}, ${AS.dRH!=null?'±'+AS.dRH+'% RH':'not specified'}. ${(outT||outR)?'Outside the outer limits for this type. ':''}Seasonal drift is not checked. Material ratings are separate, above.`]);
   }
   $('pnote').textContent=P.note;
-  $('ev').innerHTML=rows.map(r=>`<div class="ev"><div class="n">${r[0]}</div><div class="chip ${r[1]}">${L[r[1]]}</div><div><div class="m">${r[2]}</div></div><div class="d" style="grid-column:1/-1"><small>${r[3]}</small></div></div>`).join('');
+  $('ev').innerHTML=rows.map(r=>{
+    const head=`<div class="n">${r[0]}</div><div class="chip ${r[1]}">${L[r[1]]}</div><div><div class="m">${r[2]}</div></div>`;
+    const body=r[1]==='na'?`<div class="d" style="grid-column:1/-1"><small>${r[3]}</small></div>`:`<details class="d" style="grid-column:1/-1" data-k="${r[0]}"${openRows.has(r[0])?' open':''}><summary>Details</summary><small>${r[3]}</small></details>`;
+    return `<div class="ev">${head}${body}</div>`;
+  }).join('');
   // five-model table lives on the Information tab
   const bm=st.bench;
-  $('models').innerHTML=m.aging==='na'?'<p><small>Not assessed for this material profile.</small></p>':`<div class="tw"><table><thead><tr><th>Model</th><th>Multiplier at this condition</th><th>Lifetime (yr)</th></tr></thead><tbody>${m.lm.map((r,i)=>`<tr${i===2?' style="font-weight:600"':''}><td>${r.n}${i===2?' — CCI default form':''}</td><td>${r.x.toFixed(2)}×</td><td>${yrs(bm*r.x)}</td></tr>`).join('')}</tbody></table></div><small>Benchmark ${bm} years at 20 °C and 50% RH, uncertain by up to a factor of three. The headline multiplier is Michalski 2000 (RH power of 1.3); Sebera 1994 is the linear form (RH power of 1). Treat lifetime as an order of magnitude.</small>`;
+  $('models').innerHTML=m.aging==='na'?'<p><small>Not assessed for this material profile.</small></p>':`<div class="tw"><table><thead><tr><th>Model</th><th>Multiplier at this condition</th><th>Lifetime (yr)</th></tr></thead><tbody>${m.lm.map((r,i)=>`<tr${i===2?' style="font-weight:600"':''}><td>${r.n}${i===2?' — used for the headline':''}</td><td>${r.x.toFixed(2)}×</td><td>${yrs(bm*r.x)}</td></tr>`).join('')}</tbody></table></div><small>Assumes a benchmark of ${bm} years at 20 °C and 50% RH, which CCI says can be out by up to three times. The bold row sets the headline figure. Treat lifetimes as a rough order of magnitude.</small>`;
   $('th-t').textContent='T '+(st.F?'°F':'°C');$('th-dp').textContent='DP '+(st.F?'°F':'°C');
   drawRec();
 }
@@ -809,6 +849,7 @@ function showTab(k){
   if(k==='log')drawLogCharts();
 }
 ['eval','log','info'].forEach(id=>on('tab-'+id,'click',()=>showTab(id)));
+$('ev').addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'&&d.dataset.k){d.open?openRows.add(d.dataset.k):openRows.delete(d.dataset.k)}},true);
 loadState();solve();render();
 </script>
 </body>
