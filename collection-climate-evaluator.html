@@ -5,14 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Collection climate evaluator</title>
 <style>
-:root{--bg:#e9e7e0;--panel:#f6f5f1;--ink:#22262d;--mute:#5a616d;--line:#cbc8bd;--good:#2f6f4f;--ok:#656d7a;--watch:#92600f;--risk:#8b1e2d;--acc:#2a5d6e;--trk:#c9c6bb;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#15181c;--panel:#1e2227;--ink:#e6e4de;--mute:#9aa0aa;--line:#363c44;--good:#38865f;--ok:#737b89;--watch:#a8701a;--risk:#b0364a;--acc:#74b4c8;--trk:#3a4048;color-scheme:dark}}
+:root{--bg:#e9e7e0;--panel:#f6f5f1;--ink:#22262d;--mute:#5a616d;--line:#cbc8bd;--good:#2f6f4f;--caut:#92600f;--risk:#8b1e2d;--acc:#2a5d6e;--temp:#7a4f9e;--trk:#c9c6bb;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#15181c;--panel:#1e2227;--ink:#e6e4de;--mute:#9aa0aa;--line:#363c44;--good:#38865f;--caut:#a8701a;--risk:#b0364a;--acc:#74b4c8;--temp:#b98fd9;--trk:#3a4048;color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 .wrap{max-width:1040px;margin:0 auto;padding:20px 16px 48px}
 h1{font:600 26px/1.2 Georgia,"Iowan Old Style",serif;margin:0 0 4px}
 .lede{color:var(--mute);margin:0 0 18px;max-width:70ch}
 h2{font:600 18px/1.3 Georgia,"Iowan Old Style",serif;margin:0 0 12px}
+h3{font:600 15px/1.3 system-ui;margin:18px 0 8px}
 .grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px}
 @media(max-width:820px){.grid{grid-template-columns:1fr}}
 section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px}
@@ -29,14 +30,18 @@ small{color:var(--mute)}
 input[type=range]{width:100%;accent-color:var(--acc);margin:8px 0 0}
 input[type=range]:disabled{opacity:.55}
 .units{display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap}
-.buf{margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.buf{margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .buf input{width:60px;padding:3px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);font:inherit}
+.strip{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 16px;margin:0 0 16px}
+.strip .lab{font-weight:600;font-size:13px;margin-right:2px}
+.derived{font-style:italic;color:var(--acc)}
 .ev{display:grid;grid-template-columns:128px 86px 1fr;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .ev:first-of-type{border-top:0}
 .ev .n{font-weight:600}
 .chip{color:#fff;text-align:center;border-radius:4px;padding:5px 4px;font-weight:600}
-.chip.good{background:var(--good)}.chip.ok{background:var(--ok)}.chip.watch{background:var(--watch)}.chip.risk{background:var(--risk)}
+.chip.good{background:var(--good)}.chip.caut{background:var(--caut)}.chip.risk{background:var(--risk)}
 .chip.na{background:transparent;color:var(--mute);border:1px dashed var(--line)}
+.ind{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);border-radius:3px;padding:4px 6px;text-align:center}
 .pn{margin:-6px 0 12px;display:block}
 .ev .m{font:600 17px Georgia,serif}
 @media(max-width:520px){.ev{grid-template-columns:1fr 84px}.ev .d{grid-column:1/-1}}
@@ -55,7 +60,7 @@ select{max-width:100%;padding:3px 6px;border:1px solid var(--line);border-radius
 .lt table{min-width:0;font-size:14px}
 details{margin-top:16px}
 summary{cursor:pointer;font-weight:600}
-details p,details li{max-width:78ch}
+p,li{max-width:78ch}
 code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(--bg);padding:1px 4px;border-radius:3px}
 .foot{color:var(--mute);margin-top:16px;max-width:78ch}
 .charts{margin-top:14px;display:grid;gap:14px}
@@ -65,13 +70,50 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 .hdr{margin:2px 0 10px}
 .drop{outline:2px dashed transparent;outline-offset:4px;border-radius:6px}
 .drop.over{outline-color:var(--acc)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px}
+.tab{font:600 14px system-ui;border:1px solid var(--line);border-radius:5px 5px 0 0;background:var(--bg);color:var(--mute);padding:8px 16px;cursor:pointer;margin-bottom:-1px}
+.tab:hover{border-color:var(--acc);color:var(--ink)}
+.tab[aria-selected=true]{background:var(--panel);color:var(--ink);border-color:var(--acc);border-bottom-color:var(--panel)}
+.key{display:flex;gap:14px;flex-wrap:wrap;margin:2px 0 8px}
+.ki{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink)}
+.ln{width:20px;height:0;border-top:3px solid;border-radius:2px}
+.ln.dash{border-top-style:dashed;border-top-width:2px}
+.sh{width:16px;height:11px;background:var(--trk);border:1px solid var(--line);border-radius:2px}
+.sr{width:16px;height:11px;background:var(--good);opacity:.18;border:1px solid var(--good);border-radius:2px}
+.muted{color:var(--mute)}
 </style>
 </head>
 <body>
 <div class="wrap">
 <h1>Collection climate evaluator</h1>
-<p class="lede">Move two sliders and the third is solved. Each temperature and humidity pair is then assessed against published models for chemical ageing, mechanical stress, mould and metal corrosion. These are static ratings for a single condition. For a period, import a logger CSV below and the same models are applied to the whole series.</p>
+<p class="lede">Move two sliders and the third is solved. Each temperature and humidity pair is then assessed against published models for chemical ageing, mechanical stress, mould and metal corrosion, and against a setpoint class. These are static ratings for a single condition. For a period, use the Logged data tab and the same models are applied to the whole series.</p>
 
+<div class="tabs" role="tablist" aria-label="Sections">
+<button class="tab" id="tab-eval" role="tab" aria-selected="true" aria-controls="panel-eval">Evaluate</button>
+<button class="tab" id="tab-log" role="tab" aria-selected="false" aria-controls="panel-log">Logged data</button>
+<button class="tab" id="tab-info" role="tab" aria-selected="false" aria-controls="panel-info">Information</button>
+</div>
+
+<div class="strip" aria-label="Material and model settings">
+<div class="buf" style="margin-top:0">
+<label class="lab" for="prof">Material profile</label><select id="prof"><option value="gen">General screening, all ratings</option><option value="skin">Leather, skin, parchment, sized or dirty textile</option><option value="clean">Clean paper, textile or wood</option><option value="photo">Photographic prints and film (gelatin)</option><option value="iron">Clean iron or copper alloy</option><option value="salt">Salt-contaminated or archaeological iron or copper alloy</option><option value="plas">Plastics, rubber and polyurethane foam</option></select>
+<label class="lab" for="cls">Material class</label><select id="cls">
+<option value="1000">1000 yr — stable organic</option>
+<option value="300">300 yr — stable photographic</option>
+<option value="100" selected>100 yr — acidic paper, early plastics</option>
+<option value="30">30 yr — magnetic media, rubber, foam</option>
+</select>
+<label class="lab" for="ea">Activation energy</label><input type="number" id="ea" value="100" min="60" max="130" step="1"><small>kJ/mol</small>
+<label class="lab" for="buf">Mould margin</label><input type="number" id="buf" value="5" min="0" max="20" step="1"><small>% RH below 65%</small>
+</div>
+<div class="buf">
+<label class="lab" for="ash">Setpoint class</label><select id="ash"><option value="none">None — material ratings only</option><option value="AA">ASHRAE AA</option><option value="A1">ASHRAE A1</option><option value="A2">ASHRAE A2</option><option value="B">ASHRAE B</option><option value="C">ASHRAE C</option><option value="D">ASHRAE D</option></select>
+<label class="lab" for="baseT">Annual baseline</label><input type="number" id="baseT" value="20" step="0.5"><small>°C</small><input type="number" id="baseRH" value="50" step="1"><small>% RH</small><button id="usecur">Use current condition</button><button id="usemean" disabled>Use series mean</button>
+</div>
+<small class="pn" id="pnote"></small><small class="pn" id="derived-note"><span class="derived" id="dnote">Class and activation energy are set by the material profile; adjust them freely.</span></small>
+</div>
+
+<div id="panel-eval" role="tabpanel" aria-labelledby="tab-eval">
 <div class="grid">
 <section aria-labelledby="h-in">
 <h2 id="h-in">Conditions</h2>
@@ -84,16 +126,6 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 <div class="row" id="r-rh"><div class="rh"><b><label for="s-rh">Relative humidity</label></b><span class="val" id="v-rh"></span></div><input type="range" id="s-rh" min="5" max="100" step="0.5"></div>
 <div class="row" id="r-dp"><div class="rh"><b><label for="s-dp">Dew point</label></b><span class="val" id="v-dp"></span></div><input type="range" id="s-dp" step="0.5"></div>
 <div class="units"><small>Temperature scale</small><label><input type="radio" name="u" value="C" checked>°C</label><label><input type="radio" name="u" value="F">°F</label></div>
-<div class="buf"><label for="buf">Mould safety margin</label><input type="number" id="buf" value="5" min="0" max="20" step="1"><small>% RH below the 65% RH germination threshold that still counts as Watch</small></div>
-<div class="buf"><label for="prof">Material profile</label><select id="prof"><option value="gen">General screening, all ratings</option><option value="skin">Leather, skin, parchment, sized or dirty textile</option><option value="clean">Clean paper, textile or wood</option><option value="photo">Photographic prints and film (gelatin)</option><option value="iron">Clean iron or copper alloy</option><option value="salt">Salt-contaminated or archaeological iron or copper alloy</option><option value="plas">Plastics, rubber and polyurethane foam</option></select></div>
-<small class="pn" id="pnote"></small>
-<div class="buf"><label for="cls">Material class</label><select id="cls">
-<option value="1000">Stable organic: wood, linen, cotton, leather, rag paper, parchment, oil paint (1000 yr)</option>
-<option value="300">Stable photographic: B&amp;W glass negatives, polyester film (300 yr)</option>
-<option value="100" selected>Acidic paper, some film, celluloid, early plastics, acidified textiles (100 yr)</option>
-<option value="30">Magnetic media, unstable colour photographs, cellulose nitrate, rubber, polyurethane foam (30 yr)</option>
-</select></div>
-<div class="buf"><label for="ea">Activation energy</label><input type="number" id="ea" value="100" min="60" max="130" step="1"><small>kJ/mol, used by the headline lifetime multiplier (Michalski form) and the Tétreault model. 60 to 80 suits polyurethane and resin varnish.</small></div>
 </section>
 
 <section aria-labelledby="h-ev">
@@ -105,37 +137,73 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 
 <section style="margin-top:16px" aria-labelledby="h-rec">
 <h2 id="h-rec">Record and compare</h2>
-<button id="save">Save current</button> <button id="clear">Clear</button> <button id="exp">Export CSV</button>
+<div class="buf" style="margin-top:0"><small>Scenarios</small>
+<button data-sc="20,50,Reference 20 °C/50%">20 °C/50% reference</button>
+<button data-sc="15,50,Cool 15 °C/50%">Cool 15 °C/50%</button>
+<button data-sc="8,35,Cold 8 °C/35%">Cold 8 °C/35%</button>
+<button data-sc="20,30,Dry 20 °C/30%">Dry 20 °C/30%</button>
+</div>
+<div class="buf"><button id="save">Save current</button> <button id="clear">Clear</button> <button id="exp">Export CSV</button></div>
 <div class="tw"><table><thead><tr><th>Label</th><th id="th-t">T</th><th>RH %</th><th id="th-dp">DP</th><th>PI (yr)</th><th>Life ×</th><th>EMC %</th><th>Margin to 65%</th><th>Ratings</th></tr></thead><tbody id="rec"></tbody></table></div>
-<p id="empty"><small>No saved conditions yet. Set conditions, then choose Save current.</small></p>
+<p id="empty"><small>No saved conditions yet. Set conditions, or click a scenario above.</small></p>
 </section>
+</div>
 
+<div id="panel-log" role="tabpanel" aria-labelledby="tab-log" hidden>
 <section class="drop" style="margin-top:16px" aria-labelledby="h-log" id="logsec">
 <h2 id="h-log">Logged data: time series analysis</h2>
-<p><small>Import a logger CSV export. Time, temperature and humidity columns are detected from the headings (this Dexion export format is understood, as are ISO timestamps and day/month or month/day dates). Nothing is uploaded: parsing and analysis happen in your browser. The material profile above sets the thresholds, and the analysis follows the same models as the static ratings.</small></p>
-<div class="buf"><label for="file">Logger CSV</label><input type="file" id="file" accept=".csv,text/csv,text/plain"> <button id="logx" disabled>Download summary</button></div>
+<p><small>Import a logger CSV export. Time, temperature and humidity columns are detected from the headings (this Dexion export format is understood, as are ISO timestamps and day/month or month/day dates). Nothing is uploaded: parsing and analysis happen in your browser. The settings above set the thresholds and the setpoint band.</small></p>
+<div class="buf"><label for="file">Logger CSV</label><input type="file" id="file" accept=".csv,text/csv,text/plain"> <button id="demo">Load demo data</button> <button id="logx" disabled>Download summary</button> <button id="evtX" disabled>Download events CSV</button></div>
 <div id="log" aria-live="polite"><p><small>No data loaded yet.</small></p></div>
+<div id="evts"></div>
 <div class="charts" id="logc"></div>
 </section>
+</div>
 
-<details><summary>Models, sources and limits</summary>
+<div id="panel-info" role="tabpanel" aria-labelledby="tab-info" hidden>
+<section aria-labelledby="h-info">
+<h2 id="h-info">Models, sources and limits</h2>
+
+<h3>How to read the ratings</h3>
+<p>Every row uses one scale: <b>Good</b>, <b>Caution</b>, <b>Risk</b>, or <b>N/A</b> when the material profile says the cause does not apply. Provenance of the middle band: IPI’s bands are Good/OK/Risk and CCI’s mould guidance uses Watch; both middle bands map to Caution here. Rows with an <b>Indicator</b> badge carry no rating: they are context, not verdicts.</p>
+
+<h3>Lifetime models at the current condition</h3>
+<div id="models"></div>
+
+<h3>Setpoint types of control (ASHRAE, as summarised by CCI)</h3>
+<p>CCI now calls these “types of control”, not quality classes: AA, A and B are not better than C or D, they are different specifications with different costs. Each type has four parameters: long-term outer limits, an annual baseline (for permanent collections, the building’s historic annual average — yours to set above), seasonal adjustments from that baseline, and short-term fluctuations plus space gradients. This tool checks the outer limits and the short-term band around your baseline; seasonal adjustments are deliberate slow changes and are not checked.</p>
+<div class="tw"><table><thead><tr><th>Type</th><th>Outer limits (T)</th><th>Outer limits (RH)</th><th>Seasonal T</th><th>Seasonal RH</th><th>Short-term T</th><th>Short-term RH</th></tr></thead><tbody>
+<tr><td>AA</td><td>10–25 °C</td><td>35–65%</td><td>+5/−5 °C</td><td>no change</td><td>±2 °C</td><td>±5%</td></tr>
+<tr><td>A1</td><td>10–25 °C</td><td>35–65%</td><td>+5/−10 °C</td><td>±10%</td><td>±2 °C</td><td>±5%</td></tr>
+<tr><td>A2</td><td>10–25 °C</td><td>35–65%</td><td>+5/−10 °C</td><td>no change</td><td>±2 °C</td><td>±10%</td></tr>
+<tr><td>B</td><td>≤30 °C</td><td>30–70%</td><td>+10/−20 °C</td><td>±10%</td><td>±5 °C</td><td>±10%</td></tr>
+<tr><td>C</td><td>≤40 °C</td><td>25–75%</td><td>not specified</td><td>not specified</td><td>rarely over 30 °C</td><td>not above 65% for more than X days*</td></tr>
+<tr><td>D</td><td>not specified</td><td>≤75%</td><td>not specified</td><td>not specified</td><td>not specified</td><td>not above 65% for more than X days*</td></tr>
+</tbody></table></div>
+<p><small>* X is the time to visible mould at that RH on CCI’s mould curve — which the Logged data tab computes as mould runs. For logged data, summary bands on the setpoint check are: Risk above 1% of the period outside the long-term outer limits, Caution above 3% outside the short-term band, Good otherwise. CCI warns against claims like “AA most of the time”: scope any claim to a defined period. Cool (8–16 °C), cold (0–8 °C) and frozen (−20–0 °C) storage categories, all at 30–50% RH, are not offered here yet.</small></p>
+
+<h3>Sources and models</h3>
 <ul>
 <li><b>Dew point and RH:</b> Magnus form, <code>γ = 17.62·x / (243.12 + x)</code> with x in °C. Dew point cannot exceed air temperature, so RH is capped at 100%.</li>
-<li><b>Preservation Index (PI):</b> the IPI form of the Arrhenius rate fitted to cellulose triacetate (Reilly 1995, as set out by Padfield 2004): <code>k = RH × 5.9×10¹² × exp(−90300 / (8.314·T<sub>K</sub>))</code>, <code>PI = 1/k</code> years. Ratings use IPI’s bands for the Dew Point Calculator: 75 or more Good, 45 to under 75 OK, under 45 Risk. Output can differ from IPI’s own tool by a few percent (at 20 °C and 50% RH this gives about 42 years, where the IPI tool showed 44), so treat it as the same model family, not a replica. IPI’s rate is linear in RH: a power law with index 1. Where one lifetime form is needed, this tool uses CCI’s default instead, the Michalski power of 1.3.</li>
-<li><b>Lifetime multipliers:</b> five published models, each normalised to 1 at 20 °C and 50% RH, using the equations in CCI’s explanation of its lifetime calculator: Sebera 1994 (isoperms; he had no data for the RH effect and took lifetime as proportional to RH, a power law with index 1 — the linear form; his activation energies of 125 to 146 kJ/mol are above currently accepted values, so his isoperms exaggerate the benefit of cold storage; plotted here at 125 kJ/mol), Reilly et al. 1995 (acetate film fit), Michalski 2000 (RH power of 1.3, adjustable activation energy), Strlič et al. 2015 (paper, 119 kJ/mol) and Tétreault et al. 2023 (modern printing paper, adjustable activation energy). The headline lifetime multiplier uses CCI’s default form, the Michalski power of 1.3; earlier builds of this tool used a linear RH term. Checked against CCI’s published table of RH effects at 20 °C: the five published models agree closely between 30% and 60% RH, but diverge below 20% and above 60%, where there is little data to choose between them. Benchmark lifetimes of 1000, 300, 100 and 30 years are CCI’s material classes and are uncertain by up to a factor of three. The headline Natural ageing rating still uses IPI’s PI bands.</li>
-<li><b>EMC:</b> Hailwood–Horrobin sorption model with the Simpson (1998, USDA Forest Products Laboratory) coefficients for wood. Cellulosic collection materials such as paper and textile differ in absolute value, so use it as an index of dimensional stress. Mechanical and metal bands are IPI’s: mechanical OK for 5 to 12.5% EMC, otherwise Risk; metal Good under 7.0, OK to under 10.5, Risk at 10.5 and above.</li>
-<li><b>Mould:</b> the rating follows CCI’s time-to-mould data (Table 1 of its explanation of the mould and lifetime calculators), which is the more cautious source for museum organic materials. Outer limits for surfaces rich in protein, starch or sugar (leather, skin, parchment, sized or dirty textile, gelatin): no germination within 1000+ days at 64% RH and below; at 65% RH germination in about 600 days and visible growth in about 500; at 70% RH about 50 and 130 days; at 75% about 12 and 35; at 80% about 1.5 and 12; at 90 to 100% RH 2 to 3 days. So Risk is set from 70% RH, Watch from 65% RH, and Good below — with your safety margin widening the Watch band below 65% RH. Clean paper, textile and wood keep CCI’s 80 to 85% RH onset for visible growth (Risk from 80% RH), but the 65% RH germination floor still applies to the Watch band. Sedlbauer’s Lowest Isopleth for Mould, <code>RH<sub>crit</sub> = 0.02633·cosh(0.10083·(T − 30)) + c</code> with c = 0.7153 for LIM 0 (about 75.6% RH at 20 °C), is shown for reference only: for museum organic materials it is the less cautious of the two sources and it no longer sets the rating. The CCI curves were fitted near 25 °C and are a cautious generalisation for other temperatures. CCI treats a sustained drop below 65% RH as ending the growth cycle.</li>
-<li><b>Material profiles:</b> presets drawn from CCI’s “Incorrect relative humidity” tables, which classify sensitivity by material and condition. Choosing a profile switches off ratings that do not apply, and resets the material class and activation energy, which you can then adjust. Leather, skin, parchment and sized or dirty textile use the CCI sensitive-surface bands: Watch from 65% RH, Risk from 70%. Clean paper, textile and wood use CCI’s 80 to 85% RH onset for visible growth, with Risk set at 80% and Watch from 65% minus your margin. Photographic gelatin adds a blocking check: Watch above 60% RH (CCI) and Risk from 75%; gelatin is protein, so the mould bands are the sensitive ones. Clean iron and copper alloys use the IPI EMC bands. Salt-contaminated or archaeological metal uses Risk from 33% RH (calcium chloride deliquesces at 33%, magnesium chloride at 35%) and Watch from 30%, the typical critical RH CCI gives for special metal collections. Plastics, rubber and foam use the 30-year class and 70 kJ/mol, inside CCI’s 60 to 80 kJ/mol range for polyurethane and resin varnish. Not included: unstable glass (CCI’s text and table disagree on which side of about 40% and 55% RH causes weeping and crizzling), lead, zinc and bismuth alloys (pollutant-dependent) and minerals such as pyrite (no figures in the sources read).</li>
-<li><b>Logged data:</b> columns are matched by heading keywords; timestamps are parsed as ISO, or as day/month/year when no value above 12 appears in the first place (month/day is used when one does), and are analysed as wall-clock times recorded in the file. Samples are counted at the median sampling interval; gaps longer than twice that are reported. <b>Mould runs</b> are continuous periods at or above 65% RH: a dip below 65% RH is forgiven for up to 3 hours, since a short dip does not dry the material, while a longer drop counts as ending the growth cycle on CCI’s rule. Each run is compared with CCI’s germination and visible-growth times at the run’s peak RH. <b>Chemical ageing</b> accumulates as equivalent time at 20 °C and 50% RH on CCI’s default lifetime form; the time-weighted preservation index (TWPI) is the same integration on IPI’s PI, the harmonic mean of PI over time as IPI defines it. <b>Fluctuation</b> is reported as the daily RH swing, with days over 10% RH counted; CCI’s proofed-fluctuation assessment needs a vulnerability class for the object, which this tool does not ask for, so treat the swing figures as an indicator. <b>Pest bands</b> (below 10 °C, 15 °C, 20 °C) are likewise indicators from the clothes-moth literature, not predictors.</li>
+<li><b>Preservation Index (PI):</b> the IPI form of the Arrhenius rate fitted to cellulose triacetate (Reilly 1995, as set out by Padfield 2004): <code>k = RH × 5.9×10¹² × exp(−90300 / (8.314·T<sub>K</sub>))</code>, <code>PI = 1/k</code> years. Ratings use IPI’s bands for the Dew Point Calculator: 75 or more Good, 45 to under 75 Caution, under 45 Risk. Output can differ from IPI’s own tool by a few percent (at 20 °C and 50% RH this gives about 42 years, where the IPI tool showed 44), so treat it as the same model family, not a replica. IPI’s rate is linear in RH: a power law with index 1. Where one lifetime form is needed, this tool uses CCI’s default instead, the Michalski power of 1.3.</li>
+<li><b>Lifetime multipliers:</b> five published models, each normalised to 1 at 20 °C and 50% RH, using the equations in CCI’s explanation of its lifetime calculator: Sebera 1994 (isoperms; he had no data for the RH effect and took lifetime as proportional to RH, a power law with index 1 — the linear form; his activation energies of 125 to 146 kJ/mol are above currently accepted values, so his isoperms exaggerate the benefit of cold storage; plotted here at 125 kJ/mol), Reilly et al. 1995 (acetate film fit), Michalski 2000 (RH power of 1.3, adjustable activation energy), Strlič et al. 2015 (paper, 119 kJ/mol) and Tétreault et al. 2023 (modern printing paper, adjustable activation energy). The headline lifetime multiplier uses CCI’s default form, the Michalski power of 1.3. Checked against CCI’s published table of RH effects at 20 °C: the five published models agree closely between 30% and 60% RH, but diverge below 20% and above 60%, where there is little data to choose between them. Benchmark lifetimes of 1000, 300, 100 and 30 years are CCI’s material classes and are uncertain by up to a factor of three. The headline Natural ageing rating still uses IPI’s PI bands.</li>
+<li><b>EMC:</b> Hailwood–Horrobin sorption model with the Simpson (1998, USDA Forest Products Laboratory) coefficients for wood. Cellulosic collection materials such as paper and textile differ in absolute value, so use it as an index of dimensional stress. Mechanical and metal bands are IPI’s: mechanical within 5 to 12.5% EMC is Caution (IPI’s OK band), outside is Risk; metal Good under 7.0, Caution to under 10.5, Risk at 10.5 and above.</li>
+<li><b>Mould:</b> the rating follows CCI’s time-to-mould data (Table 1 of its explanation of the mould and lifetime calculators), which is the more cautious source for museum organic materials. Outer limits for surfaces rich in protein, starch or sugar (leather, skin, parchment, sized or dirty textile, gelatin): no germination within 1000+ days at 64% RH and below; at 65% RH germination in about 600 days and visible growth in about 500; at 70% RH about 50 and 130 days; at 75% about 12 and 35; at 80% about 1.5 and 12; at 90 to 100% RH 2 to 3 days. So Risk is set from 70% RH, Caution from 65% RH, and Good below — with your safety margin widening the Caution band below 65% RH. Clean paper, textile and wood keep CCI’s 80 to 85% RH onset for visible growth (Risk from 80% RH), but the 65% RH germination floor still applies. Sedlbauer’s Lowest Isopleth for Mould (LIM 0, about 75.6% RH at 20 °C) is shown for reference only: for museum organic materials it is the less cautious of the two sources and it no longer sets the rating. The CCI curves were fitted near 25 °C and are a cautious generalisation for other temperatures. CCI treats a sustained drop below 65% RH as ending the growth cycle.</li>
+<li><b>Material profiles:</b> presets drawn from CCI’s “Incorrect relative humidity” tables, which classify sensitivity by material and condition. Choosing a profile switches off ratings that do not apply, and resets the material class and activation energy, which you can then adjust. Leather, skin, parchment and sized or dirty textile use the CCI sensitive-surface bands: Caution from 65% RH, Risk from 70%. Clean paper, textile and wood use CCI’s 80 to 85% RH onset for visible growth, with Risk set at 80%. Photographic gelatin adds a blocking check: Caution above 60% RH (CCI) and Risk from 75%; gelatin is protein, so the mould bands are the sensitive ones. Clean iron and copper alloys use the IPI EMC bands. Salt-contaminated or archaeological metal uses Risk from 33% RH (calcium chloride deliquesces at 33%, magnesium chloride at 35%) and Caution from 30%, the typical critical RH CCI gives for special metal collections. Plastics, rubber and foam use the 30-year class and 70 kJ/mol, inside CCI’s 60 to 80 kJ/mol range for polyurethane and resin varnish. Not included: unstable glass (CCI’s text and table disagree on which side of about 40% and 55% RH causes weeping and crizzling), lead, zinc and bismuth alloys (pollutant-dependent) and minerals such as pyrite (no figures in the sources read).</li>
+<li><b>Logged data:</b> columns are matched by heading keywords; timestamps are parsed as ISO, or as day/month/year when no value above 12 appears in the first place (month/day is used when one does), and are analysed as wall-clock times recorded in the file. Samples are counted at the median sampling interval; gaps longer than twice that are reported. <b>Mould runs</b> are continuous periods at or above 65% RH: a dip below 65% RH is forgiven for up to 3 hours, since a short dip does not dry the material, while a longer drop counts as ending the growth cycle on CCI’s rule. Each run is compared with CCI’s germination and visible-growth times at the run’s peak RH. <b>Chemical ageing</b> accumulates as equivalent time at 20 °C and 50% RH on CCI’s default lifetime form; the time-weighted preservation index (TWPI) is the same integration on IPI’s PI, the harmonic mean of PI over time as IPI defines it. <b>Setpoint checks</b> report time outside the short-term band around your annual baseline and outside the long-term outer limits of the chosen type of control. <b>Condensation</b> reports hours at or above 95% and 90% RH and the highest dew point in the series. <b>Pest bands</b> (below 10 °C, 15 °C, 20 °C) are indicators from the clothes-moth literature, not predictors.</li>
 </ul>
-<p><b>Limits.</b> The static ratings above have no time component; the logged analysis adds one, but it is still a summary: IPI’s Days to Mould and the VTT mould index track wetness history more exactly than the run analysis here, and anything acting on the result should first be judged against the raw series. Mould also needs a viable substrate and spores, and these curves describe the humidity condition only.</p>
-</details>
+
+<h3>Limits</h3>
+<p>The static ratings above have no time component; the logged analysis adds one, but it is still a summary: IPI’s Days to Mould and the VTT mould index track wetness history more exactly than the run analysis here, and anything acting on the result should first be judged against the raw series. Mould also needs a viable substrate and spores, and these curves describe the humidity condition only. Exports carry a provenance footer naming the model forms used.</p>
 <p class="foot">Built from published models for decision support. It is not a substitute for conservator judgement or IPI’s own tools.</p>
+</section>
+</div>
 </div>
 
 <script>
 const $=id=>document.getElementById(id);
 const st={T:20,RH:50,DP:9.3,mode:'dp',F:false,ea:100,bench:100,prof:'gen'};
+const ctl={ash:'none',baseT:20,baseRH:50};
 const A=17.62,B=243.12,g=x=>A*x/(B+x),cl=(x,a,b)=>Math.min(b,Math.max(a,x));
 const dpOf=(T,RH)=>{const q=Math.log(RH/100)+g(T);return B*q/(A-q)};
 const rhOf=(T,DP)=>100*Math.exp(g(DP)-g(T));
@@ -154,11 +222,20 @@ const lim=(T,c)=>100*(.02633*Math.cosh(.10083*(T-30))+c);
 const PROF={
  gen:{name:'General screening',note:'All ratings apply. Use this for mixed or unknown material. Mould uses the CCI bands for sensitive surfaces.'},
  skin:{name:'Leather, skin, parchment, sized or dirty textile',metal:'na',note:'Surfaces rich in protein, starch or sugar: Risk from 70% RH, where CCI expects germination in about 50 days. Metal corrosion is not assessed.'},
- clean:{name:'Clean paper, textile or wood',mould:'clean',metal:'na',note:'CCI puts visible mould on clean cellulosic material at about 80 to 85% RH and above, so Risk is set at 80%. Spores can still germinate above 65% RH, so Watch applies from 65% minus your margin. Metal corrosion is not assessed.'},
+ clean:{name:'Clean paper, textile or wood',mould:'clean',metal:'na',note:'CCI puts visible mould on clean cellulosic material at about 80 to 85% RH and above, so Risk is set at 80%. Spores can still germinate above 65% RH, so Caution applies from 65% minus your margin. Metal corrosion is not assessed.'},
  photo:{name:'Photographic prints and film (gelatin)',metal:'na',gel:1,note:'Gelatin is protein, so mould uses the sensitive-surface bands. Adds gelatin blocking: CCI advises avoiding RH above 60%. Metal corrosion is not assessed. Set the material class to suit the film or print type.'},
  iron:{name:'Clean iron or copper alloy',aging:'na',mech:'na',mould:'na',note:'Only corrosion is assessed, on the IPI EMC bands. Above 75% RH all corrosion accelerates and hand salts deliquesce.'},
- salt:{name:'Salt-contaminated or archaeological iron or copper alloy',aging:'na',mech:'na',mould:'na',metal:'salt',note:'Risk from 33% RH, where calcium chloride deliquesces, and Watch from 30%, the typical critical RH CCI gives for special metal collections.'},
+ salt:{name:'Salt-contaminated or archaeological iron or copper alloy',aging:'na',mech:'na',mould:'na',metal:'salt',note:'Risk from 33% RH, where calcium chloride deliquesces, and Caution from 30%, the typical critical RH CCI gives for special metal collections.'},
  plas:{name:'Plastics, rubber and polyurethane foam',bench:30,ea:70,mech:'na',mould:'na',metal:'na',note:'Chemical lifetime uses the 30-year class and 70 kJ/mol (CCI range 60 to 80). Other ratings are not assessed.'}
+};
+const ASH={
+ none:null,
+ AA:{name:'AA',desc:'precision control, no seasonal change to RH',tOuter:[10,25],rhOuter:[35,65],dT:2,dRH:5},
+ A1:{name:'A1',desc:'precision control with seasonal temperature and RH change',tOuter:[10,25],rhOuter:[35,65],dT:2,dRH:5},
+ A2:{name:'A2',desc:'precision control with seasonal temperature change only',tOuter:[10,25],rhOuter:[35,65],dT:2,dRH:10},
+ B:{name:'B',desc:'limited control, large seasonal temperature change',tOuter:[null,30],rhOuter:[30,70],dT:5,dRH:10},
+ C:{name:'C',desc:'prevents RH extremes and high temperature extremes',tOuter:[null,40],rhOuter:[25,75],dT:null,dRH:null},
+ D:{name:'D',desc:'prevents dampness',tOuter:null,rhOuter:[null,75],dT:null,dRH:null}
 };
 const R_=8.314;
 const MODELS=[
@@ -187,19 +264,20 @@ function metrics(T,RH,buf){
   const tg=cci(CG,RH),tf=cci(CF,RH);
   const P=PROF[st.prof],na=k=>P[k]==='na';
   const watch=cl(65-buf,0,65),riskAt=P.mould==='clean'?80:70;
-  const mould=RH>=riskAt?'risk':RH>=watch?'watch':'good';
-  let metal=E<7?'good':E<10.5?'ok':'risk';
-  if(P.metal==='salt')metal=RH>=33?'risk':RH>=30?'watch':'good';
+  const mould=RH>=riskAt?'risk':RH>=watch?'caut':'good';
+  let metal=E<7?'good':E<10.5?'caut':'risk';
+  if(P.metal==='salt')metal=RH>=33?'risk':RH>=30?'caut':'good';
   return{PI,LM,lm,xs,E,l0,mg,tg,tf,watch,riskAt,
-    aging:na('aging')?'na':(PI>=75?'good':PI>=45?'ok':'risk'),
-    mech:na('mech')?'na':((E>=5&&E<=12.5)?'ok':'risk'),
+    aging:na('aging')?'na':(PI>=75?'good':PI>=45?'caut':'risk'),
+    mech:na('mech')?'na':((E>=5&&E<=12.5)?'caut':'risk'),
     mould:na('mould')?'na':mould,
     metal:na('metal')?'na':metal,
-    gel:P.gel?(RH>=75?'risk':RH>60?'watch':'good'):null};
+    gel:P.gel?(RH>=75?'risk':RH>60?'caut':'good'):null};
 }
-const L={good:'Good',ok:'OK',watch:'Watch',risk:'Risk',na:'N/A'};
+const L={good:'Good',caut:'Caution',risk:'Risk',na:'N/A'};
 const yrs=v=>v>=1000?'over 1000':v>=100?Math.round(v):v.toFixed(1);
 const buf=()=>cl(parseFloat($('buf').value)||0,0,20);
+const PROV='Collection climate evaluator — CCI default lifetime form (Michalski 2000, RH^1.3), CCI mould Table 1, IPI PI/EMC bands, ASHRAE types of control as summarised by CCI. Generated '+new Date().toISOString().slice(0,10)+'.';
 
 /* ---------- logged data: parse and analyse (pure) ---------- */
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -246,10 +324,7 @@ function parseLog(text){
       if(/alarm/.test(s))v-=4;
       return v;
     });
-    const pick=max=>{let bi=-1,bv=0;score.forEach((v,j)=>{if(v>bv){bv=v;bi=j}});return bi};
-    const itime=score.map((v,j)=>(/time|date|stamp/.test(f[j].toLowerCase())?4:0));
-    let ti=-1,tv=0;itime.forEach((v,j)=>{if(v>tv){tv=v;ti=j}});
-    const it=pick(0);
+    let ti=-1,tv=0;score.forEach((v,j)=>{if(/time|date|stamp/.test(f[j].toLowerCase())&&v>tv){tv=4;ti=j}});
     const others=score.map((v,j)=>j===ti?0:v);
     let best=-1,bv2=0;others.forEach((v,j)=>{if(v>bv2){bv2=v;best=j}});
     if(ti>=0&&best>=0&&bv2>=3){hi=i;cols={t:ti};break}
@@ -260,7 +335,6 @@ function parseLog(text){
   const findCol=re=>{for(let j=0;j<hlow.length;j++){if(re.test(hlow[j])&&!/alarm/.test(hlow[j]))return j}return -1};
   const colT=findCol(/temp/),colRH=findCol(/humid|(%|\W)rh(\W|$)/),colDP=findCol(/dew/);
   const colTime=cols.t;
-  // day-first vs month-first from raw strings
   let order='dmy';
   for(let i=hi+1;i<Math.min(lines.length,hi+500);i++){
     const f=splitCSV(lines[i]);if(f.length<=colTime)continue;
@@ -286,15 +360,15 @@ function analyseLog(rows,cfg){
   let maxGap=0;for(let i=1;i<n;i++){const dt=rows[i].t-rows[i-1].t;if(dt>maxGap)maxGap=dt}
   const gapH=Math.max(0,(maxGap-step)/3600e3);
   const t0=rows[0].t,t1=rows[n-1].t,periodH=(t1-t0)/3600e3;
-  // value stats
   let tMin=1e9,tMax=-1e9,tSum=0,tN=0,rMin=1e9,rMax=-1e9,rSum=0,rN=0;
   for(const r of rows){
     if(r.T!=null){tN++;tSum+=r.T;if(r.T<tMin)tMin=r.T;if(r.T>tMax)tMax=r.T}
     if(r.RH!=null){rN++;rSum+=r.RH;if(r.RH<rMin)rMin=r.RH;if(r.RH>rMax)rMax=r.RH}
   }
-  // threshold hours (sample counts at the median interval)
   const hAt=thr=>{let c=0;for(const r of rows)if(r.RH!=null&&r.RH>=thr)c++;return c*stepH};
   const h65=hAt(65),hRisk=hAt(cfg.riskAt),hDamp=hAt(75),hWatchP=hAt(cfg.watch);
+  const h95=hAt(95),h90=hAt(90);
+  let maxDP=-1e9;for(const r of rows){const dp=r.DP!=null?r.DP:(r.T!=null&&r.RH!=null?dpOf(r.T,r.RH):null);if(dp!=null&&dp>maxDP)maxDP=dp}
   // mould runs above 65% RH, dips below 65% bridged up to 3 h
   const runs=[];let cur=null,lastA=null;
   for(const r of rows){
@@ -331,28 +405,55 @@ function analyseLog(rows,cfg){
   const ratio=sumDt>0?eqY/sumDt:0;
   const twpi=sumDtPI>0?sumDt/sumDtPI:0;
   const life=sumDt>0?cfg.bench*sumDt/eqY:0;
-  // EMC bands, metal, pest, gelatin
+  // EMC bands, metal, pest
   let eGood=0,eOk=0,eRisk=0,mGood=0,mOk=0,mRisk=0;
   for(const r of rows){if(r.T==null||r.RH==null)continue;const e=emc(r.T,r.RH);
     if(e<5)eGood++;else if(e<=12.5)eOk++;else eRisk++;
     if(e<7)mGood++;else if(e<10.5)mOk++;else mRisk++}
-  const tot=Math.max(1,tN);
   const frac=c=>c*stepH;
   const pest={cold:0,mild:0,warm:0,hot:0};
   for(const r of rows){if(r.T==null)continue;if(r.T<10)pest.cold++;else if(r.T<15)pest.mild++;else if(r.T<20)pest.warm++;else pest.hot++}
   const hGelW=cfg.gel?hAt(60):0,hGelR=cfg.gel?hAt(75):0;
   const hSaltR=cfg.salt?hAt(33):0,hSaltW=cfg.salt?hAt(30):0;
+  // setpoint check + excursions (if a type of control is set)
+  const ASh=cfg.ash&&ASH[cfg.ash]?ASH[cfg.ash]:null;
+  let inShort=0,outOuter=0;
+  const events=[];
+  if(ASh){
+    const bT=cfg.baseT,bRH=cfg.baseRH;
+    const rhIn=r=>ASh.dRH!=null?Math.abs(r.RH-bRH)<=ASh.dRH:(ASh.rhOuter?(r.RH>=(ASh.rhOuter[0]??-1e9))&&(r.RH<=(ASh.rhOuter[1]??1e9)):true);
+    const rhOuter=r=>ASh.rhOuter?(r.RH>=(ASh.rhOuter[0]??-1e9))&&(r.RH<=(ASh.rhOuter[1]??1e9)):true;
+    const tIn=r=>ASh.dT!=null&&r.T!=null?Math.abs(r.T-bT)<=ASh.dT:true;
+    const tOuter=r=>ASh.tOuter&&r.T!=null?(r.T>=(ASh.tOuter[0]??-1e9))&&(r.T<=(ASh.tOuter[1]??1e9)):true;
+    let runE=null,runT=null;
+    const flushR=run=>{if(!run)return;const dur=(run.end-run.start)/3600e3+stepH;if(dur>=1)events.push({type:run.peak>bRH?'RH above band':'RH below band',start:run.start,end:run.end,dur,peak:run.peak,peakLabel:'RH'})};
+    const flushT=run=>{if(!run)return;const dur=(run.end-run.start)/3600e3+stepH;if(dur>=1)events.push({type:'T out of band',start:run.start,end:run.end,dur,peak:run.peak,peakLabel:'T'})};
+    for(const r of rows){
+      const inS=rhIn(r)&&tIn(r),outO=!rhOuter(r)||!tOuter(r);
+      if(inS)inShort++;if(outO)outOuter++;
+      const bad=r.RH!=null&&!rhIn(r);
+      if(bad){if(runE&&r.t-runE.end<=2*3600e3){runE.end=r.t;if(Math.abs(r.RH-bRH)>Math.abs(runE.peak-bRH))runE.peak=r.RH}else{flushR(runE);runE={start:r.t,end:r.t,peak:r.RH}}}
+      else if(runE&&r.t-runE.end>2*3600e3){flushR(runE);runE=null}
+      const badT=r.T!=null&&ASh.dT!=null&&Math.abs(r.T-bT)>ASh.dT;
+      if(badT){if(runT&&r.t-runT.end<=2*3600e3){runT.end=r.t;if(Math.abs(r.T-bT)>Math.abs(runT.peak-bT))runT.peak=r.T}else{flushT(runT);runT={start:r.t,end:r.t,peak:r.T}}}
+      else if(runT&&r.t-runT.end>2*3600e3){flushT(runT);runT=null}
+    }
+    flushR(runE);flushT(runT);
+  }
+  for(const r of runList)events.push({type:'Mould run',start:r.start,end:r.end,dur:r.dur,peak:r.peak,peakLabel:'peak RH',note:r.verdict+', germination about '+fmtD(r.tg)+' at peak'});
+  events.sort((a,b)=>a.start-b.start);
   return{n,invalid:cfg.invalid||0,t0,t1,periodH,stepH,maxGapH:gapH,
     tMin,tMax,tMean:tN?tSum/tN:null,rMin,rMax,rMean:rN?rSum/rN:null,
     h65,hRisk,hDamp,hWatchP,riskAt:cfg.riskAt,watch:cfg.watch,runs:runList,germRuns,worst,
-    swMean,swMax,swDays,swOver,
+    swMean,swMax,swDays,swOver,h95,h90,maxDP:maxDP>-1e8?maxDP:null,
     eqY,ratio,twpi,life,bench:cfg.bench,
     eGood:frac(eGood),eOk:frac(eOk),eRisk:frac(eRisk),
     mGood:frac(mGood),mOk:frac(mOk),mRisk:frac(mRisk),
     pest:{cold:frac(pest.cold),mild:frac(pest.mild),warm:frac(pest.warm),hot:frac(pest.hot)},
-    hGelW,hGelR,hSaltR,hSaltW};
+    hGelW,hGelR,hSaltR,hSaltW,
+    inShort:frac(inShort),outOuter:frac(outOuter),events,ashName:ASh?ASh.name:null};
 }
-function seriesBuckets(rows,key,buckets){
+function seriesBuckets(rows,buckets){
   const out=[];const per=Math.max(1,Math.ceil(rows.length/buckets));
   for(let i=0;i<rows.length;i+=per){
     let mn=1e9,mx=-1e9,mn2=1e9,mx2=-1e9,t=rows[i].t;
@@ -370,7 +471,7 @@ function seriesBuckets(rows,key,buckets){
 let logState=null,logAnalysis=null;
 function logCfg(){
   const P=PROF[st.prof];
-  return{watch:cl(65-buf(),0,65),riskAt:P.mould==='clean'?80:70,salt:P.metal==='salt',gel:!!P.gel,bench:st.bench,ea:st.ea,invalid:logState?logState.invalid:0};
+  return{watch:cl(65-buf(),0,65),riskAt:P.mould==='clean'?80:70,salt:P.metal==='salt',gel:!!P.gel,bench:st.bench,ea:st.ea,invalid:logState?logState.invalid:0,ash:ctl.ash,baseT:ctl.baseT,baseRH:ctl.baseRH};
 }
 function logRowsHtml(a){
   const rows=[];
@@ -384,91 +485,114 @@ function logVerdicts(a,P){
   const out=[];
   const na=k=>P[k]==='na';
   const hTxt=hoursTxt;
-  // Mould
   if(na('mould'))out.push(['Mould','na','—','Not assessed for this material profile.']);
   else{
-    const chip=a.hRisk>0?'risk':a.h65>0?'watch':'good';
+    const chip=a.hRisk>0?'risk':a.h65>0?'caut':'good';
     const val=a.h65>0?hTxt(a.h65)+' ≥65% RH':'None at or above 65% RH';
-    let note=`Hours at or above the Risk threshold (${a.riskAt}% RH): ${hTxt(a.hRisk)}. Hours at or above your Watch threshold: ${hTxt(a.hWatchP)}.`;
+    let note=`Hours at or above the Risk threshold (${a.riskAt}% RH): ${hTxt(a.hRisk)}.`;
     if(a.worst){
-      note+=` Longest run at or above 65% RH: ${fmtDur(a.worst.dur)} from ${fmtDT(a.worst.start)}, peak ${a.worst.peak.toFixed(0)}% RH — CCI germination at that peak takes about ${fmtD(a.worst.tg)} and visible growth ${fmtD(a.worst.tf)}, so this run is ${a.worst.verdict}.`;
-      note+=` Runs reaching germination time: ${a.germRuns} of ${a.runs.length}.`;
+      note+=` Longest run: ${fmtDur(a.worst.dur)} from ${fmtDT(a.worst.start)}, peak ${a.worst.peak.toFixed(0)}% RH — ${a.worst.verdict} (CCI germination at that peak: about ${fmtD(a.worst.tg)}). ${a.germRuns} of ${a.runs.length} runs reach germination time.`;
     }else note+=' No run at or above 65% RH: CCI expects no germination within 1000 days below 64% RH.';
     out.push(['Mould',chip,val,note]);
   }
-  // Chemical ageing
   if(na('aging'))out.push(['Chemical ageing','na','—','Not assessed for this material profile.']);
   else{
-    const chip=a.twpi>=75?'good':a.twpi>=45?'ok':'risk';
-    const val=`TWPI ${yrs(a.twpi)} yr`;
-    const note=`Time-weighted preservation index on IPI's PI. The same exposure is ${a.ratio.toFixed(2)}× the ageing of steady 20 °C and 50% RH (1.00× is equal), i.e. ${fmtDur(a.periodH)} of exposure costs ${(a.periodH/24*a.ratio).toFixed(1)} equivalent days at 20 °C and 50% RH. At this rate a ${a.bench}-year class material has about ${yrs(a.life)} years left (CCI default lifetime form, RH power of 1.3).`;
-    out.push(['Chemical ageing',chip,val,note]);
+    const chip=a.twpi>=75?'good':a.twpi>=45?'caut':'risk';
+    out.push(['Chemical ageing',chip,`TWPI ${yrs(a.twpi)} yr`,`Time-weighted preservation index (IPI). At this rate a ${a.bench}-year class material has about ${yrs(a.life)} years left; exposure runs ${a.ratio.toFixed(2)}× the rate of steady 20 °C and 50% RH.`]);
   }
-  // Mechanical / fluctuation
   if(na('mech'))out.push(['Mechanical damage','na','—','Not assessed for this material profile.']);
   else{
     const outBand=a.eGood+a.eRisk;
-    const chip=outBand>0.05*a.periodH?'risk':'ok';
-    const val=`EMC 5–12.5%: ${(100*a.eOk/Math.max(1,a.eOk+a.eGood+a.eRisk)).toFixed(0)}% of time`;
-    const note=`Time outside the OK band: ${hoursTxt(a.eGood)} below 5% EMC, ${hoursTxt(a.eRisk)} above 12.5%. Mean daily RH swing ${a.swMean.toFixed(1)}% RH, maximum ${a.swMax.toFixed(1)}; ${a.swDays?Math.round(100*a.swOver/a.swDays):0}% of days swing more than 10% RH. CCI's proofed-fluctuation test needs a vulnerability class for the object, so treat the swing figures as an indicator.`;
-    out.push(['Mechanical damage',chip,val,note]);
+    const chip=outBand>0.05*a.periodH?'risk':'caut';
+    const val=`In EMC band ${(100*a.eOk/Math.max(1,a.eOk+a.eGood+a.eRisk)).toFixed(0)}%`;
+    out.push(['Mechanical damage',chip,val,`Time outside the 5 to 12.5% EMC band: ${hoursTxt(a.eGood)} below, ${hoursTxt(a.eRisk)} above.`]);
   }
-  // Metal
   if(na('metal'))out.push(['Metal corrosion','na','—','Not assessed for this material profile.']);
   else if(P.metal==='salt'){
-    const chip=a.hSaltR>0?'risk':a.hSaltW>0?'watch':'good';
-    out.push(['Metal corrosion',chip,`${hTxt(a.hSaltR)} ≥33% RH`,`Chloride salts deliquesce above about 33% RH (calcium chloride) and 35% (magnesium chloride). Hours at or above 30% RH: ${hTxt(a.hSaltW)}.`]);
+    const chip=a.hSaltR>0?'risk':a.hSaltW>0?'caut':'good';
+    out.push(['Metal corrosion',chip,`${hTxt(a.hSaltR)} ≥33% RH`,`Chloride salts deliquesce above about 33% RH. Hours at or above 30% RH: ${hTxt(a.hSaltW)}.`]);
   }else{
     const riskH=Math.max(a.hDamp,a.mRisk),thr=0.005*a.periodH;
-    const chip=riskH>=thr?'risk':riskH>0?'watch':a.mOk>=0.5*a.periodH?'ok':'good';
-    out.push(['Metal corrosion',chip,`${hTxt(a.hDamp)} ≥75% RH`,`Damp above 75% RH accelerates all corrosion. EMC time in the metal bands: under 7.0 ${hTxt(a.mGood)}, 7.0 to under 10.5 ${hTxt(a.mOk)}, 10.5 and above ${hTxt(a.mRisk)} (the static Risk band from 10.5, IPI).`]);
+    const chip=riskH>=thr?'risk':riskH>0?'caut':a.mOk>=0.5*a.periodH?'caut':'good';
+    out.push(['Metal corrosion',chip,`${hTxt(a.hDamp)} ≥75% RH`,`Damp above 75% RH accelerates corrosion. EMC in the metal bands: under 7.0 ${hTxt(a.mGood)}, 7.0 to under 10.5 ${hTxt(a.mOk)}, 10.5 and above ${hTxt(a.mRisk)}.`]);
   }
-  // Gelatin
-  if(a.hGelW||a.hGelR)out.push(['Gelatin blocking',a.hGelR>0?'risk':a.hGelW>0?'watch':'good',`${hTxt(a.hGelW)} above 60% RH`,`CCI advises avoiding RH above 60% to limit sticking of gelatin layers. Hours at or above 75% RH: ${hTxt(a.hGelR)}.`]);
-  // Pest
-  out.push(['Pest activity','na',`${hoursTxt(a.pest.hot)} above 20 °C`,`Indicator only: clothes moth egg-laying stops below 10 °C (${hoursTxt(a.pest.cold)} here), reproduction drops below about 15 °C (${hoursTxt(a.pest.mild)} at 10 to 15 °C), and above 20 °C up to three generations a year are possible (${hoursTxt(a.pest.warm)} at 15 to 20 °C, ${hoursTxt(a.pest.hot)} at 20 °C and above).`]);
+  if(a.hGelW||a.hGelR)out.push(['Gelatin blocking',a.hGelR>0?'risk':a.hGelW>0?'caut':'good',`${hTxt(a.hGelW)} above 60% RH`,`CCI advises avoiding RH above 60% to limit sticking. Hours at or above 75% RH: ${hTxt(a.hGelR)}.`]);
+  if(a.ashName){
+    const pct=a.periodH>0?100*a.inShort/((a.n-1)*a.stepH+a.stepH):100;
+    const chip=a.outOuter>0.01*a.periodH?'risk':pct<97?'caut':'good';
+    out.push(['Setpoint ('+a.ashName+')',chip,`${pct.toFixed(1)}% within band`,`Time within the short-term band around ${ctl.baseT.toFixed(0)} °C / ${ctl.baseRH.toFixed(0)}% RH (baseline). Outside the long-term outer limits: ${hoursTxt(a.outOuter)}. Seasonal adjustments are not checked. ${a.events.filter(e=>e.type!=='Mould run').length} excursions listed below.`]);
+  }
   return out;
+}
+function logIndicators(a,P){
+  const hTxt=hoursTxt;
+  const out=[];
+  out.push(['RH fluctuation','mean swing '+a.swMean.toFixed(1)+'% RH',`Maximum daily swing ${a.swMax.toFixed(1)}% RH; ${a.swDays?Math.round(100*a.swOver/a.swDays):0}% of days swing more than 10% RH. CCI's proofed-fluctuation test needs a vulnerability class for the object, so treat this as an indicator.`]);
+  out.push(['Condensation',a.maxDP!=null?'peak dew point '+a.maxDP.toFixed(1)+' °C':'no dew point',`Hours at or above 95% RH: ${hTxt(a.h95)}; at or above 90% RH: ${hTxt(a.h90)}.${a.maxDP!=null?' Any surface at or below '+a.maxDP.toFixed(1)+' °C would have condensed on the worst reading.':''}`]);
+  out.push(['Pest activity',hTxt(a.pest.hot)+' above 20 °C',`Clothes moth egg-laying stops below 10 °C (${hTxt(a.pest.cold)} here), reproduction drops below about 15 °C (${hTxt(a.pest.mild)} at 10 to 15 °C), and above 20 °C up to three generations a year are possible (${hTxt(a.pest.warm)} at 15 to 20 °C, ${hTxt(a.pest.hot)} at 20 °C and above).`]);
+  return out;
+}
+function eventsTable(a){
+  if(!a.events.length)return'';
+  const rows=a.events.slice(0,12).map(e=>`<tr><td>${e.type}</td><td>${fmtDT(e.start)}</td><td>${fmtDur(e.dur)}</td><td>${e.peak!=null?e.peak.toFixed(0)+(e.peakLabel==='T'?' °C':'%'):'—'}</td><td style="text-align:left">${e.note||(e.type==='Mould run'?'':'outside the setpoint band')}</td></tr>`).join('');
+  return`<h3 style="margin-top:16px">Events${a.events.length>12?` <small>(${a.events.length} in total; the 12 longest shown, CSV has all)</small>`:''}</h3><div class="tw"><table><thead><tr><th>Event</th><th>Start</th><th>Duration</th><th>Peak</th><th style="text-align:left">Note</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function logSummaryText(){
   if(!logAnalysis)return'';
   const a=logAnalysis,P=PROF[st.prof],lines=[];
   lines.push('Collection climate evaluator — logged data summary');
-  lines.push('Material profile: '+P.name+' | material class '+st.bench+' yr | activation energy '+st.ea+' kJ/mol | mould margin '+buf()+'% RH');
+  lines.push('Material profile: '+P.name+' | material class '+st.bench+' yr | activation energy '+st.ea+' kJ/mol | mould margin '+buf()+'% RH | setpoint: '+(a.ashName?('ASHRAE '+a.ashName+', baseline '+ctl.baseT.toFixed(0)+' °C / '+ctl.baseRH.toFixed(0)+'% RH'):'none'));
   if(logState.name)lines.push('File: '+logState.name+(logState.offset?' (times as recorded, '+logState.offset+')':''));
   logRowsHtml(a).forEach(r=>lines.push(r[0]+': '+r[1]));
+  lines.push('--- RATINGS ---');
   logVerdicts(a,P).forEach(r=>lines.push(r[0]+' ['+L[r[1]]+'] '+r[2]+' — '+r[3]));
+  lines.push('--- INDICATORS ---');
+  logIndicators(a,P).forEach(r=>lines.push(r[0]+' (indicator) '+r[1]+' — '+r[2]));
+  if(a.events.length){
+    lines.push('--- EVENTS ---');
+    a.events.forEach(e=>lines.push(e.type+' | '+fmtDT(e.start)+' | '+fmtDur(e.dur)+' | '+(e.peak!=null?e.peak.toFixed(0):'')+' | '+(e.note||'')));
+  }
+  lines.push('--- PROVENANCE ---');
+  lines.push(PROV);
   return lines.join('\n');
 }
 function renderLog(){
   const el=$('log'),ch=$('logc');
-  if(!logState||!logState.rows||!logState.rows.length){el.innerHTML='<p><small>No data loaded yet.</small></p>';ch.innerHTML='';$('logx').disabled=true;return}
+  if(!logState||!logState.rows||!logState.rows.length){el.innerHTML='<p><small>No data loaded yet.</small></p>';ch.innerHTML='';$('evts').innerHTML='';$('logx').disabled=true;$('evtX').disabled=true;$('usemean').disabled=true;return}
   logAnalysis=analyseLog(logState.rows,logCfg());
-  $('logx').disabled=false;
+  $('logx').disabled=false;$('evtX').disabled=false;$('usemean').disabled=false;
   const a=logAnalysis,P=PROF[st.prof];
   const meta=`<div class="hdr"><b>${logState.name||'Imported file'}</b>${logState.offset?` <small>times as recorded (${logState.offset})</small>`:''} <small>· columns: ${logState.cols.time}${logState.cols.T?', '+logState.cols.T:''}${logState.cols.RH?', '+logState.cols.RH:''}${logState.cols.DP?', '+logState.cols.DP:''} · ${logState.order==='mdy'?'month/day dates':'day/month dates'}</small></div>`;
   const stats=logRowsHtml(a).map(r=>`<div class="ev"><div class="n">${r[0]}</div><div class="m" style="grid-column:2/4;font-size:15px">${r[1]}</div></div>`).join('');
-  const verdicts=logVerdicts(a,P).map(r=>`<div class="ev"><div class="n">${r[0]}</div><div class="chip ${r[1]}">${L[r[1]]}</div><div><div class="m">${r[2]}</div></div><div class="d" style="grid-column:1/-1"><small>${r[3]}</small></div></div>`).join('');
-  el.innerHTML=meta+stats+verdicts;
+  const rowHtml=r=>r[1]==='na'?`<div class="ev"><div class="n">${r[0]}</div><div class="chip na">N/A</div><div><div class="m">${r[2]}</div></div><div class="d" style="grid-column:1/-1"><small>${r[3]}</small></div></div>`:`<div class="ev"><div class="n">${r[0]}</div><div class="chip ${r[1]}">${L[r[1]]}</div><div><div class="m">${r[2]}</div></div><div class="d" style="grid-column:1/-1"><small>${r[3]}</small></div></div>`;
+  const indHtml=r=>`<div class="ev"><div class="n">${r[0]}</div><div class="ind">Indicator</div><div><div class="m">${r[1]}</div></div><div class="d" style="grid-column:1/-1"><small>${r[2]}</small></div></div>`;
+  el.innerHTML=meta+stats+'<h3 style="margin-top:16px">Ratings</h3>'+logVerdicts(a,P).map(rowHtml).join('')+'<h3 style="margin-top:16px">Indicators</h3>'+logIndicators(a,P).map(indHtml).join('');
+  $('evts').innerHTML=eventsTable(a);
   drawLogCharts();
 }
 function drawLogCharts(){
   const ch=$('logc');
   if(!logState||!logState.rows||!logState.rows.length){ch.innerHTML='';return}
-  const a=logAnalysis,cfg=logCfg();
-  ch.innerHTML=`<div class="chart"><canvas id="c-ts"></canvas><div class="cap"><small>Temperature (right axis, ${st.F?'°F':'°C'}) and RH (left axis, %) over the logged period. Dashed lines: 65% RH germination floor and the ${cfg.riskAt}% RH Risk threshold. Shaded: time at or above 65% RH.</small></div></div>
+  const a=logAnalysis,cfg=logCfg(),A2=cfg.ash&&ASH[cfg.ash]?ASH[cfg.ash]:null;
+  const bandTxt=A2&&A2.dRH!=null?`<span class="ki"><span class="sr"></span>Setpoint band ${cfg.baseRH.toFixed(0)}±${A2.dRH}% RH (ASHRAE ${A2.name})</span>`:'';
+  ch.innerHTML=`<div class="chart"><div class="key"><span class="ki"><span class="ln" style="border-color:${getComputedStyle(document.body).getPropertyValue('--acc').trim()}"></span>RH % (left axis)</span><span class="ki"><span class="ln" style="border-color:${getComputedStyle(document.body).getPropertyValue('--temp').trim()}"></span>Temperature (right axis, ${st.F?'°F':'°C'})</span><span class="ki"><span class="ln dash" style="border-color:${getComputedStyle(document.body).getPropertyValue('--caut').trim()}"></span>65% RH germination floor</span><span class="ki"><span class="ln dash" style="border-color:${getComputedStyle(document.body).getPropertyValue('--risk').trim()}"></span>${cfg.riskAt}% RH Risk threshold</span><span class="ki"><span class="sh"></span>Time at or above 65% RH</span>${bandTxt}</div><canvas id="c-ts"></canvas><div class="cap"><small>Temperature and RH over the logged period, ${logState.offset?'times as recorded ('+logState.offset+')':'times as recorded in the file'}. RH is read on the left axis and temperature on the right.</small></div></div>
   <div class="chart"><canvas id="c-hist"></canvas><div class="cap"><small>Distribution of RH readings, 2% bins. Marked: 65%, 70% and 80% RH.</small></div></div>
   <div class="chart"><canvas id="c-day"></canvas><div class="cap"><small>Daily RH swing (minimum to maximum each day). The dashed line is 10% RH, the threshold used for the fluctuation count.</small></div></div>`;
   const css=k=>getComputedStyle(document.body).getPropertyValue(k).trim();
-  const ink=css('--ink'),mute=css('--mute'),line=css('--line'),acc=css('--acc'),good=css('--good'),watch=css('--watch'),risk=css('--risk'),trk=css('--trk');
+  const mute=css('--mute'),line=css('--line'),acc=css('--acc'),caut=css('--caut'),risk=css('--risk'),trk=css('--trk'),tmp=css('--temp'),good=css('--good');
   const setup=(id,h)=>{const cv=$(id),w=cv.clientWidth||600,dpr=window.devicePixelRatio||1;cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext('2d');x.scale(dpr,dpr);return{x,w,h}};
-  // time series
   {
-    const {x,w,h}=setup('c-ts',240),rows=seriesBuckets(logState.rows,'rh',Math.max(200,Math.floor(w*1.5)));
+    const {x,w,h}=setup('c-ts',240),rows=seriesBuckets(logState.rows,Math.max(200,Math.floor(w*1.5)));
     const t0=a.t0,t1=a.t1,padL=38,padR=38,padT=10,padB=20;
     const yR=v=>padT+(100-v)/100*(h-padT-padB);
     const tSpan=Math.max(1,a.tMax-a.tMin),tPad=tSpan*0.1;
     const yT=v=>padT+(a.tMax+tPad-v)/(tSpan+2*tPad)*(h-padT-padB);
     const X=t=>padL+(t-t0)/Math.max(1,t1-t0)*(w-padL-padR);
+    if(A2&&A2.dRH!=null){
+      x.fillStyle=good;x.globalAlpha=.12;
+      x.fillRect(padL,yR(cfg.baseRH+A2.dRH),w-padL-padR,Math.max(1,yR(cfg.baseRH-A2.dRH)-yR(cfg.baseRH+A2.dRH)));
+      x.globalAlpha=1;
+    }
     x.fillStyle=trk;rows.forEach(r=>{if(r.rh1>=65){x.fillRect(X(r.t)-1,yR(Math.min(100,r.rh1)),2.5,Math.max(1,yR(Math.max(0,r.rh0))-yR(Math.min(100,r.rh1))))}});
     x.strokeStyle=line;x.lineWidth=1;
     x.beginPath();x.moveTo(padL,padT);x.lineTo(padL,h-padB);x.lineTo(w-padR,h-padB);x.stroke();
@@ -476,21 +600,19 @@ function drawLogCharts(){
     [0,25,50,75,100].forEach(v=>{x.fillText(v+'%',4,yR(v)+3)});
     [a.tMin,a.tMin+tSpan/2,a.tMax].forEach(v=>{x.fillText(toD(v).toFixed(0)+(st.F?'°F':'°C'),w-padR+4,yT(v)+3)});
     x.setLineDash([4,4]);x.lineWidth=1;
-    x.strokeStyle=watch;x.beginPath();x.moveTo(padL,yR(65));x.lineTo(w-padR,yR(65));x.stroke();
+    x.strokeStyle=caut;x.beginPath();x.moveTo(padL,yR(65));x.lineTo(w-padR,yR(65));x.stroke();
     x.strokeStyle=risk;x.beginPath();x.moveTo(padL,yR(cfg.riskAt));x.lineTo(w-padR,yR(cfg.riskAt));x.stroke();
     x.setLineDash([]);
     x.strokeStyle=acc;x.lineWidth=1.2;x.beginPath();
     rows.forEach((r,i)=>{const px=X(r.t);if(i===0){x.moveTo(px,yR(r.rh1));x.lineTo(px,yR(r.rh0))}else{x.lineTo(px,yR(r.rh1));x.lineTo(px,yR(r.rh0))}});
     x.stroke();
-    x.strokeStyle=risk;x.lineWidth=1.2;x.beginPath();
+    x.strokeStyle=tmp;x.lineWidth=1.2;x.beginPath();
     let started=false;
     rows.forEach(r=>{if(r.t0==null)return;const px=X(r.t);if(!started){x.moveTo(px,yT(r.t1));started=true}else x.lineTo(px,yT(r.t1));x.lineTo(px,yT(r.t0))});
     x.stroke();
     x.fillStyle=mute;
-    const ticks=4;
-    for(let i=0;i<=ticks;i++){const t=t0+(t1-t0)*i/ticks;x.fillText(fmtDT(t),Math.min(w-70,Math.max(padL,X(t)-22)),h-6)}
+    for(let i=0;i<=4;i++){const t=t0+(t1-t0)*i/4;x.fillText(fmtDT(t),Math.min(w-70,Math.max(padL,X(t)-22)),h-6)}
   }
-  // histogram
   {
     const {x,w,h}=setup('c-hist',180);
     const lo=Math.floor(a.rMin/2)*2,hi=Math.ceil(a.rMax/2)*2;
@@ -498,19 +620,17 @@ function drawLogCharts(){
     for(const r of logState.rows){if(r.RH==null)continue;let b=Math.floor((r.RH-lo)/2);if(b>=nb)b=nb-1;if(b>=0)bins[b]++}
     const mx=Math.max(...bins),padL=34,padB=22,padT=8;
     const bw=(w-padL-8)/nb;
-    x.fillStyle=trk;
     bins.forEach((c,i)=>{const bh=c/mx*(h-padT-padB);const cx=lo+i*2;
-      x.fillStyle=cx>=cfg.riskAt?risk:cx>=65?watch:acc;
+      x.fillStyle=cx>=cfg.riskAt?risk:cx>=65?caut:acc;
       x.globalAlpha=.85;x.fillRect(padL+i*bw,h-padB-bh,Math.max(1,bw-1.5),bh);x.globalAlpha=1});
     x.strokeStyle=line;x.lineWidth=1;x.beginPath();x.moveTo(padL,padT);x.lineTo(padL,h-padB);x.lineTo(w-4,h-padB);x.stroke();
     x.fillStyle=mute;x.font='11px system-ui';
     x.fillText('0',padL-14,h-padB+3);x.fillText(String(mx),padL-24,padT+8);
     for(let v=lo;v<=hi;v+=Math.max(2,Math.round((hi-lo)/10/2)*2)){x.fillText(v+'%',padL+(v-lo)/2*bw-8,h-6)}
     x.setLineDash([4,4]);
-    [65,70,80].forEach(v=>{if(v>=lo&&v<=hi+2){x.strokeStyle=v===65?watch:risk;x.beginPath();x.moveTo(padL+(v-lo)/2*bw,padT);x.lineTo(padL+(v-lo)/2*bw,h-padB);x.stroke()}});
+    [65,70,80].forEach(v=>{if(v>=lo&&v<=hi+2){x.strokeStyle=v===65?caut:risk;x.beginPath();x.moveTo(padL+(v-lo)/2*bw,padT);x.lineTo(padL+(v-lo)/2*bw,h-padB);x.stroke()}});
     x.setLineDash([]);
   }
-  // daily swings
   {
     const days=new Map();
     for(const r of logState.rows){if(r.RH==null)continue;const k=Math.floor(r.t/86400e3);const d=days.get(k)||{min:1e9,max:-1e9,t:r.t};if(r.RH<d.min)d.min=r.RH;if(r.RH>d.max)d.max=r.RH;days.set(k,d)}
@@ -520,7 +640,7 @@ function drawLogCharts(){
     const Y=v=>padT+(y0+spanY-v)/spanY*(h-padT-padB);
     const bw=(w-padL-8)/Math.max(1,arr.length);
     arr.forEach((d,i)=>{
-      x.strokeStyle=d.max>=65?watch:acc;x.lineWidth=Math.max(2,bw-2);
+      x.strokeStyle=d.max>=65?caut:acc;x.lineWidth=Math.max(2,bw-2);
       x.beginPath();x.moveTo(padL+i*bw+bw/2,Y(d.max));x.lineTo(padL+i*bw+bw/2,Y(d.min));x.stroke();
     });
     x.setLineDash([4,4]);x.strokeStyle=mute;x.beginPath();x.moveTo(padL,Y(10+y0));x.lineTo(w-4,Y(10+y0));x.stroke();x.setLineDash([]);
@@ -544,21 +664,35 @@ function render(){
   const ct=m.tg===null?'CCI expects no germination within 1000+ days at 64% RH and below.':`CCI: earliest germination about ${fmtD(m.tg)}, visible growth by about ${fmtD(m.tf)}.`;
   const P=PROF[st.prof];
   let mouldTxt;
-  if(P.mould==='clean')mouldTxt=`Clean paper, textile and wood: visible growth needs about 80 to 85% RH (CCI), so Risk is set at 80% and Watch from ${m.watch}% RH. Spores can still germinate above 65% RH. ${ct} ${l0line}`;
-  else mouldTxt=`${ct} On surfaces rich in protein, starch or sugar — leather, skin, parchment, sized or dirty textile — CCI's data give visible mould in about 100 days at 70% RH, 10 days at 80% and 2 days at 90 to 100%, and germination in about 50 days at 70% RH and 600 days at 65%. Risk is set from ${m.riskAt}% RH and Watch from ${m.watch}% RH. ${l0line}`;
+  if(P.mould==='clean')mouldTxt=`Clean paper, textile and wood: visible growth needs about 80 to 85% RH (CCI), so Risk is set at 80% and Caution from ${m.watch}% RH. Spores can still germinate above 65% RH. ${ct} ${l0line}`;
+  else mouldTxt=`${ct} On surfaces rich in protein, starch or sugar — leather, skin, parchment, sized or dirty textile — CCI's data give visible mould in about 100 days at 70% RH, 10 days at 80% and 2 days at 90 to 100%, and germination in about 50 days at 70% RH and 600 days at 65%. Risk is set from ${m.riskAt}% RH and Caution from ${m.watch}% RH. ${l0line}`;
   const rows=[
-    ['Natural ageing',m.aging,`PI ${yrs(m.PI)} yr`,`Chemical decay of organic materials. Lifetime multiplier ${m.LM.toFixed(2)}× on CCI's default form (Michalski 2000, RH power of 1.3). The five published models span ${m.xs[0].toFixed(2)}× to ${m.xs[4].toFixed(2)}× at this condition.`],
-    ['Mechanical damage',m.mech,`EMC ${m.E.toFixed(1)}%`,'Swelling and shrinkage of hygroscopic materials. OK from 5 to 12.5%.'],
+    ['Natural ageing',m.aging,`PI ${yrs(m.PI)} yr`,`Chemical decay of organic materials. Lifetime multiplier ${m.LM.toFixed(2)}× on CCI's default form (Michalski 2000, RH power of 1.3); the five published models span ${m.xs[0].toFixed(2)}× to ${m.xs[4].toFixed(2)}× here (table on the Information tab).`],
+    ['Mechanical damage',m.mech,`EMC ${m.E.toFixed(1)}%`,'Swelling and shrinkage of hygroscopic materials. IPI OK band 5 to 12.5% EMC, shown here as Caution.'],
     ['Mould',m.mould,m.tg===null?'None expected':fmtD(m.tg),mouldTxt],
-    ['Metal corrosion',m.metal,`EMC ${m.E.toFixed(1)}%`,'Good under 7.0, OK to under 10.5.']];
+    ['Metal corrosion',m.metal,`EMC ${m.E.toFixed(1)}%`,'Good under 7.0, Caution to under 10.5, Risk at 10.5 and above (IPI bands).']];
   const NA='Not assessed for this material profile.';
   [['aging',0],['mech',1],['mould',2],['metal',3]].forEach(([k,i])=>{if(m[k]==='na'){rows[i][2]='—';rows[i][3]=NA}});
   if(P.metal==='salt'){rows[3][2]=st.RH.toFixed(0)+'% RH';rows[3][3]='Chloride salts deliquesce above about 33% RH (calcium chloride) and 35% (magnesium chloride). About 30% is the typical critical RH CCI gives for special metal collections.'}
   if(m.gel)rows.push(['Gelatin blocking',m.gel,st.RH.toFixed(0)+'% RH','CCI advises avoiding RH above 60% to limit sticking of gelatin layers. Damp, 75% and above, is the highest risk.']);
+  const AS=ASH[ctl.ash];
+  if(AS){
+    const outT=AS.tOuter&&st.T!=null&&!(st.T>=(AS.tOuter[0]??-1e9)&&st.T<=(AS.tOuter[1]??1e9));
+    const outR=AS.rhOuter&&!(st.RH>=(AS.rhOuter[0]??-1e9)&&st.RH<=(AS.rhOuter[1]??1e9));
+    const shortT=AS.dT!=null&&Math.abs(st.T-ctl.baseT)>AS.dT;
+    const shortR=AS.dRH!=null&&Math.abs(st.RH-ctl.baseRH)>AS.dRH;
+    const chip=(outT||outR)?'risk':(shortT||shortR)?'caut':'good';
+    const bits=[];
+    if(shortR)bits.push(`RH ${Math.abs(st.RH-ctl.baseRH).toFixed(1)}% from baseline`);
+    if(shortT)bits.push(`T ${Math.abs(st.T-ctl.baseT).toFixed(1)} °C from baseline`);
+    rows.push(['Setpoint ('+AS.name+')',chip,bits.length?bits.join(', '):'Within band',
+      `ASHRAE ${AS.name}: ${AS.desc}. Short-term band around ${ctl.baseT.toFixed(0)} °C / ${ctl.baseRH.toFixed(0)}% RH: ${AS.dT!=null?'±'+AS.dT+' °C':'not specified'}, ${AS.dRH!=null?'±'+AS.dRH+'% RH':'not specified'}. ${(outT||outR)?'Outside the long-term outer limits. ':''}Seasonal adjustments are not checked here. Material ceilings are rated separately above.`]);
+  }
   $('pnote').textContent=P.note;
   $('ev').innerHTML=rows.map(r=>`<div class="ev"><div class="n">${r[0]}</div><div class="chip ${r[1]}">${L[r[1]]}</div><div><div class="m">${r[2]}</div></div><div class="d" style="grid-column:1/-1"><small>${r[3]}</small></div></div>`).join('');
+  // five-model table lives on the Information tab
   const bm=st.bench;
-  $('lm').innerHTML=m.aging==='na'?'':`<b>Chemical lifetime, five published models</b><div class="tw"><table><thead><tr><th>Model</th><th>Multiplier</th><th>Lifetime (yr)</th></tr></thead><tbody>${m.lm.map((r,i)=>`<tr${i===2?' style="font-weight:600"':''}><td>${r.n}${i===2?' — CCI default form':''}</td><td>${r.x.toFixed(2)}×</td><td>${yrs(bm*r.x)}</td></tr>`).join('')}</tbody></table></div><small>Benchmark ${bm} years at 20 °C and 50% RH, uncertain by up to a factor of three. The headline multiplier is Michalski 2000 (RH power of 1.3); Sebera 1994 is the linear form (RH power of 1). Models range from ${m.xs[0].toFixed(2)}× to ${m.xs[4].toFixed(2)}× here. Treat lifetime as an order of magnitude.</small>`;
+  $('models').innerHTML=m.aging==='na'?'<p><small>Not assessed for this material profile.</small></p>':`<div class="tw"><table><thead><tr><th>Model</th><th>Multiplier at this condition</th><th>Lifetime (yr)</th></tr></thead><tbody>${m.lm.map((r,i)=>`<tr${i===2?' style="font-weight:600"':''}><td>${r.n}${i===2?' — CCI default form':''}</td><td>${r.x.toFixed(2)}×</td><td>${yrs(bm*r.x)}</td></tr>`).join('')}</tbody></table></div><small>Benchmark ${bm} years at 20 °C and 50% RH, uncertain by up to a factor of three. The headline multiplier is Michalski 2000 (RH power of 1.3); Sebera 1994 is the linear form (RH power of 1). Treat lifetime as an order of magnitude.</small>`;
   $('th-t').textContent='T '+(st.F?'°F':'°C');$('th-dp').textContent='DP '+(st.F?'°F':'°C');
   drawRec();
 }
@@ -568,13 +702,39 @@ function drawRec(){
   $('rec').innerHTML=rec.map((r,i)=>`<tr><td><input aria-label="Label" value="${r.label.replace(/"/g,'&quot;')}" data-i="${i}"></td><td>${toD(r.T).toFixed(1)}</td><td>${r.RH.toFixed(1)}</td><td>${toD(r.DP).toFixed(1)}</td><td>${yrs(r.m.PI)}</td><td>${r.m.LM.toFixed(2)}</td><td>${r.m.E.toFixed(1)}</td><td>${r.m.mg>=0?'+':'−'}${Math.abs(r.m.mg).toFixed(1)}</td><td>${['aging','mech','mould','metal','gel'].filter(k=>r.m[k]).map(k=>`<span class="tag" style="background:${r.m[k]==='na'?'var(--line)':'var(--'+r.m[k]+')'}" title="${k}: ${L[r.m[k]]}"></span>`).join('')}</td></tr>`).join('');
 }
 function on(id,ev,fn){$(id).addEventListener(ev,fn)}
-on('s-t','input',e=>{st.T=toC(+e.target.value);solve();render()});
-on('s-dp','input',e=>{st.DP=toC(+e.target.value);solve();render()});
-on('s-rh','input',e=>{st.RH=+e.target.value;solve();render()});
-on('buf','input',()=>{render();renderLog()});
-document.querySelectorAll('input[name=mode]').forEach(i=>i.addEventListener('change',e=>{st.mode=e.target.value;render()}));
-document.querySelectorAll('input[name=u]').forEach(i=>i.addEventListener('change',e=>{st.F=e.target.value==='F';render();drawLogCharts()}));
+function saveState(){
+  try{localStorage.setItem('cce.v2',JSON.stringify({T:st.T,RH:st.RH,mode:st.mode,F:st.F,ea:st.ea,bench:st.bench,prof:st.prof,buf:parseFloat($('buf').value)||5,ash:ctl.ash,baseT:ctl.baseT,baseRH:ctl.baseRH}))}catch(e){}
+}
+function loadState(){
+  try{
+    const s=JSON.parse(localStorage.getItem('cce.v2')||'null');if(!s)return;
+    if(s.T!=null)st.T=s.T;if(s.RH!=null)st.RH=s.RH;if(s.mode)st.mode=s.mode;if(s.F!=null)st.F=s.F;
+    if(s.ea)st.ea=s.ea;if(s.bench)st.bench=s.bench;if(s.prof)st.prof=s.prof;
+    if(s.buf!=null)$('buf').value=s.buf;
+    if(s.ash)ctl.ash=s.ash;if(s.baseT!=null)ctl.baseT=s.baseT;if(s.baseRH!=null)ctl.baseRH=s.baseRH;
+    $('prof').value=st.prof;$('cls').value=st.bench;$('ea').value=st.ea;
+    $('ash').value=ctl.ash;$('baseT').value=ctl.baseT;$('baseRH').value=ctl.baseRH;
+    const mr=document.querySelector('input[name=mode][value="'+st.mode+'"]');if(mr)mr.checked=true;
+    const ur=document.querySelector('input[name=u][value="'+(st.F?'F':'C')+'"]');if(ur)ur.checked=true;
+    $('dnote').style.display='none';
+  }catch(e){}
+}
+function setDerived(show){$('dnote').style.display=show?'':'none'}
+on('s-t','input',e=>{st.T=toC(+e.target.value);solve();render();saveState()});
+on('s-dp','input',e=>{st.DP=toC(+e.target.value);solve();render();saveState()});
+on('s-rh','input',e=>{st.RH=+e.target.value;solve();render();saveState()});
+on('buf','input',()=>{render();renderLog();saveState()});
+document.querySelectorAll('input[name=mode]').forEach(i=>i.addEventListener('change',e=>{st.mode=e.target.value;render();saveState()}));
+document.querySelectorAll('input[name=u]').forEach(i=>i.addEventListener('change',e=>{st.F=e.target.value==='F';render();drawLogCharts();saveState()}));
 on('save','click',()=>{rec.push({label:'Condition '+(rec.length+1),T:st.T,RH:st.RH,DP:st.DP,prof:st.prof,m:metrics(st.T,st.RH,buf())});drawRec()});
+document.querySelectorAll('[data-sc]').forEach(b=>b.addEventListener('click',e=>{
+  const [T,RH,label]=e.target.dataset.sc.split(',');
+  st.T=+T;st.RH=+RH;st.mode='dp';
+  const mr=document.querySelector('input[name=mode][value="dp"]');if(mr)mr.checked=true;
+  solve();render();
+  rec.push({label,T:st.T,RH:st.RH,DP:st.DP,prof:st.prof,m:metrics(st.T,st.RH,buf())});
+  drawRec();
+}));
 on('clear','click',()=>{rec.length=0;drawRec()});
 on('rec','input',e=>{if(e.target.dataset.i!==undefined)rec[e.target.dataset.i].label=e.target.value});
 on('exp','click',()=>{
@@ -582,39 +742,74 @@ on('exp','click',()=>{
   const h='label,temp_C,RH_pct,dewpoint_C,PI_years,lifetime_multiplier,lifetime_models_min,lifetime_models_max,EMC_pct,mould_margin_pts,ageing,mechanical,mould,metal,gelatin,profile';
   const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
   const lines=rec.map(r=>[q(r.label),r.T.toFixed(2),r.RH.toFixed(1),r.DP.toFixed(2),r.m.PI.toFixed(1),r.m.LM.toFixed(3),r.m.xs[0].toFixed(3),r.m.xs[4].toFixed(3),r.m.E.toFixed(2),r.m.mg.toFixed(1),L[r.m.aging],L[r.m.mech],L[r.m.mould],L[r.m.metal],L[r.m.gel]||'',q(PROF[r.prof].name)].join(','));
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([[h,...lines].join('\n')],{type:'text/csv'}));a.download='climate-conditions.csv';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['# '+PROV+'\n'+[h,...lines].join('\n')],{type:'text/csv'}));a.download='climate-conditions.csv';a.click();
 });
 on('prof','change',e=>{
   st.prof=e.target.value;const P=PROF[st.prof];
-  st.bench=P.bench||100;st.ea=P.ea||100;$('cls').value=st.bench;$('ea').value=st.ea;render();renderLog();
+  st.bench=P.bench||100;st.ea=P.ea||100;$('cls').value=st.bench;$('ea').value=st.ea;
+  setDerived(true);render();renderLog();saveState();
 });
-on('cls','change',e=>{st.bench=+e.target.value;render();renderLog()});
-on('ea','input',e=>{st.ea=cl(parseFloat(e.target.value)||100,60,130);render();renderLog()});
+on('cls','change',e=>{st.bench=+e.target.value;setDerived(false);render();renderLog();saveState()});
+on('ea','input',e=>{st.ea=cl(parseFloat(e.target.value)||100,60,130);setDerived(false);render();renderLog();saveState()});
+on('buf','input',saveState);
+on('ash','change',e=>{ctl.ash=e.target.value;render();renderLog();saveState()});
+on('baseT','input',e=>{ctl.baseT=cl(parseFloat(e.target.value)||20,-10,45);render();renderLog();saveState()});
+on('baseRH','input',e=>{ctl.baseRH=cl(parseFloat(e.target.value)||50,5,100);render();renderLog();saveState()});
+on('usecur','click',()=>{ctl.baseT=st.T;ctl.baseRH=st.RH;$('baseT').value=ctl.baseT.toFixed(1);$('baseRH').value=ctl.baseRH.toFixed(0);render();renderLog();saveState()});
+on('usemean','click',()=>{if(!logAnalysis)return;ctl.baseT=logAnalysis.tMean;ctl.baseRH=logAnalysis.rMean;$('baseT').value=ctl.baseT.toFixed(1);$('baseRH').value=ctl.baseRH.toFixed(0);render();renderLog();saveState()});
+function loadLogText(txt,name){
+  const p=parseLog(txt);
+  if(p.error){logState=null;logAnalysis=null;$('log').innerHTML='<p><small>'+p.error+'</small></p>';$('logc').innerHTML='';$('evts').innerHTML='';$('logx').disabled=true;$('evtX').disabled=true;return}
+  p.name=name;logState=p;renderLog();
+}
 on('file','change',e=>{
   const f=e.target.files&&e.target.files[0];if(!f)return;
-  f.text().then(txt=>{
-    const p=parseLog(txt);
-    if(p.error){logState=null;logAnalysis=null;$('log').innerHTML='<p><small>'+p.error+'</small></p>';$('logc').innerHTML='';$('logx').disabled=true;return}
-    p.name=f.name;logState=p;renderLog();
-  });
+  f.text().then(txt=>loadLogText(txt,f.name));
+});
+on('demo','click',()=>{
+  const rows=[];let t=Date.UTC(2026,1,2,0,0,0);
+  const rnd=(s)=>{const x=Math.sin(s*127.1)*43758.5453;return x-Math.floor(x)};
+  for(let i=0;i<10*48;i++){
+    const h=(i%48)/2,day=Math.floor(i/48);
+    let T=20+1.8*Math.sin((h-9)/24*2*Math.PI)+0.4*(rnd(i)-0.5);
+    let RH=52+5*Math.sin((h-15)/24*2*Math.PI)+1.5*(rnd(i+99)-0.5);
+    if(day===3&&h>=10&&h<32){RH=72+2*Math.sin(h/4)+1.5*(rnd(i+7)-0.5);T=21}
+    if(day===7&&h>=12&&h<20){T=24.5+0.8*Math.sin(h);RH=46}
+    rows.push({t,T:Math.round(T*10)/10,RH:Math.round(RH),DP:null});
+    t+=1800e3;
+  }
+  logState={rows,invalid:0,order:'iso',offset:null,name:'Demo series: 10 days at 30 min (synthetic)',cols:{time:'time',T:'temperature',RH:'humidity',DP:null}};
+  renderLog();
 });
 on('logx','click',()=>{
   const txt=logSummaryText();if(!txt)return;
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));a.download='logged-analysis-summary.txt';a.click();
+});
+on('evtX','click',()=>{
+  if(!logAnalysis||!logAnalysis.events.length)return;
+  const h='event,start,end,duration_hours,peak,peak_label,note';
+  const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const lines=logAnalysis.events.map(e=>[q(e.type),q(new Date(e.start).toISOString()),q(new Date(e.end).toISOString()),e.dur.toFixed(2),e.peak!=null?e.peak.toFixed(1):'',q(e.peakLabel||''),q(e.note||'')].join(','));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['# '+PROV+'\n'+[h,...lines].join('\n')],{type:'text/csv'}));a.download='logged-events.csv';a.click();
 });
 const logsec=$('logsec');
 ['dragover','dragenter'].forEach(ev=>logsec.addEventListener(ev,e=>{e.preventDefault();logsec.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>logsec.addEventListener(ev,e=>{e.preventDefault();logsec.classList.remove('over')}));
 logsec.addEventListener('drop',e=>{
   const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;
-  f.text().then(txt=>{
-    const p=parseLog(txt);
-    if(p.error){$('log').innerHTML='<p><small>'+p.error+'</small></p>';return}
-    p.name=f.name;logState=p;renderLog();
-  });
+  f.text().then(txt=>loadLogText(txt,f.name));
 });
 window.addEventListener('resize',()=>{clearTimeout(window.__lr);window.__lr=setTimeout(drawLogCharts,150)});
-solve();render();
+function showTab(k){
+  for(const id of ['eval','log','info']){
+    const sel=id===k;
+    $('tab-'+id).setAttribute('aria-selected',String(sel));
+    $('panel-'+id).hidden=!sel;
+  }
+  if(k==='log')drawLogCharts();
+}
+['eval','log','info'].forEach(id=>on('tab-'+id,'click',()=>showTab(id)));
+loadState();solve();render();
 </script>
 </body>
 </html>
