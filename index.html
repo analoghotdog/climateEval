@@ -83,6 +83,30 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 .sh{width:16px;height:11px;background:var(--trk);border:1px solid var(--line);border-radius:2px}
 .sr{width:16px;height:11px;background:var(--good);opacity:.18;border:1px solid var(--good);border-radius:2px}
 .muted{color:var(--mute)}
+#print-report{display:none}
+@media print{
+ @page{size:A4;margin:12mm}
+ body{background:#fff!important;color:#111!important;font-size:10pt}
+ body>*:not(#print-report){display:none!important}
+ #print-report{display:block!important;max-width:none;padding:0;color:#111}
+ #print-report h1{font-size:22pt;margin-bottom:4mm}
+ #print-report h2{font-size:14pt;margin:0 0 3mm}
+ #print-report h3{font-size:11pt}
+ #print-report .report-meta{margin:0 0 5mm;color:#333}
+ #print-report section{background:#fff;border:1px solid #bbb;border-radius:0;padding:4mm;margin:0 0 5mm;break-inside:avoid}
+ #print-report .report-section{break-inside:auto}
+ #print-report .ev{grid-template-columns:34mm 24mm 1fr;gap:3mm;padding:2mm 0}
+ #print-report .ev{break-inside:avoid}
+ #print-report .ev .d{grid-column:1/-1}
+ #print-report .chip{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ #print-report .tw{overflow:visible}
+ #print-report table{width:100%;min-width:0;font-size:8pt}
+ #print-report th,#print-report td{padding:1.5mm;text-align:left;overflow-wrap:anywhere}
+ #print-report .chart{break-inside:avoid}
+ #print-report .chart img{display:block;width:100%;height:auto}
+ #print-report .key{gap:2mm 5mm}
+ #print-report .foot{font-size:8pt}
+}
 </style>
 </head>
 <body>
@@ -116,6 +140,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 </div>
 
 <div id="panel-eval" role="tabpanel" aria-labelledby="tab-eval">
+<div class="buf"><button id="pdf-eval">Print / Save PDF report</button><small>Choose “Save as PDF” in the print dialog.</small></div>
 <div class="grid">
 <section aria-labelledby="h-in">
 <h2 id="h-in">Conditions</h2>
@@ -155,7 +180,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 <section class="drop" style="margin-top:16px" aria-labelledby="h-log" id="logsec">
 <h2 id="h-log">Logged data: time series analysis</h2>
 <p><small>Import a logger CSV export. Time, temperature and humidity columns are detected from the headings (this Dexion export format is understood, as are ISO timestamps and day/month or month/day dates). Nothing is uploaded: parsing and analysis happen in your browser. The settings above set the thresholds and the setpoint band.</small></p>
-<div class="buf"><label for="file">Logger CSV</label><input type="file" id="file" accept=".csv,text/csv,text/plain"> <button id="demo">Load demo data</button> <button id="logx" disabled>Download summary</button> <button id="evtX" disabled>Download events CSV</button></div>
+<div class="buf"><label for="file">Logger CSV</label><input type="file" id="file" accept=".csv,text/csv,text/plain"> <button id="demo">Load demo data</button> <button id="logx" disabled>Download summary</button> <button id="evtX" disabled>Download events CSV</button> <button id="pdf-log" disabled>Print / Save PDF report</button></div>
 <div id="log" aria-live="polite"><p><small>No data loaded yet.</small></p></div>
 <div id="evts"></div>
 <div class="charts" id="logc"></div>
@@ -235,6 +260,7 @@ code{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:var(-
 </div>
 </div>
 
+<div id="print-report" aria-hidden="true"></div>
 <script>
 const $=id=>document.getElementById(id);
 const st={T:20,RH:50,DP:9.3,mode:'dp',F:false,ea:100,bench:100,prof:'gen'};
@@ -593,9 +619,9 @@ function logSummaryText(){
 }
 function renderLog(){
   const el=$('log'),ch=$('logc');
-  if(!logState||!logState.rows||!logState.rows.length){el.innerHTML='<p><small>No data loaded yet.</small></p>';ch.innerHTML='';$('evts').innerHTML='';$('logx').disabled=true;$('evtX').disabled=true;$('usemean').disabled=true;return}
+  if(!logState||!logState.rows||!logState.rows.length){el.innerHTML='<p><small>No data loaded yet.</small></p>';ch.innerHTML='';$('evts').innerHTML='';$('logx').disabled=true;$('evtX').disabled=true;$('pdf-log').disabled=true;$('usemean').disabled=true;return}
   logAnalysis=analyseLog(logState.rows,logCfg());
-  $('logx').disabled=false;$('evtX').disabled=false;$('usemean').disabled=false;
+  $('logx').disabled=false;$('evtX').disabled=false;$('pdf-log').disabled=false;$('usemean').disabled=false;
   const a=logAnalysis,P=PROF[st.prof];
   const meta=`<div class="hdr"><b>${logState.name||'Imported file'}</b>${logState.offset?` <small>times as recorded (${logState.offset})</small>`:''} <small>· columns: ${logState.cols.time}${logState.cols.T?', '+logState.cols.T:''}${logState.cols.RH?', '+logState.cols.RH:''}${logState.cols.DP?', '+logState.cols.DP:''} · ${logState.order==='mdy'?'month/day dates':'day/month dates'}</small></div>`;
   const stats=logRowsHtml(a).map(r=>`<div class="ev"><div class="n">${r[0]}</div><div class="m" style="grid-column:2/4;font-size:15px">${r[1]}</div></div>`).join('');
@@ -614,7 +640,7 @@ function drawLogCharts(){
   <div class="chart"><canvas id="c-hist"></canvas><div class="cap"><small>Distribution of RH readings, 2% bins. Marked: 65%, 70% and 80% RH.</small></div></div>
   <div class="chart"><canvas id="c-day"></canvas><div class="cap"><small>Daily RH swing (minimum to maximum each day). The dashed line is 10% RH, the threshold used for the fluctuation count.</small></div></div>`;
   const css=k=>getComputedStyle(document.body).getPropertyValue(k).trim();
-  const mute=css('--mute'),line=css('--line'),rhColor=css('--chart-rh'),caut=css('--caut'),risk=css('--risk'),trk=css('--trk'),tempColor=css('--chart-temp'),good=css('--good');
+  const mute=css('--mute'),line=css('--line'),acc=css('--acc'),rhColor=css('--chart-rh'),caut=css('--caut'),risk=css('--risk'),trk=css('--trk'),tempColor=css('--chart-temp'),good=css('--good');
   const setup=(id,h)=>{const cv=$(id),w=cv.clientWidth||600,dpr=window.devicePixelRatio||1;cv.width=w*dpr;cv.height=h*dpr;const x=cv.getContext('2d');x.scale(dpr,dpr);return{x,w,h}};
   {
     const {x,w,h}=setup('c-ts',240),rows=seriesBuckets(logState.rows,Math.max(200,Math.floor(w*1.5)));
@@ -742,6 +768,59 @@ function drawRec(){
   $('rec').innerHTML=rec.map((r,i)=>`<tr><td><input aria-label="Label" value="${r.label.replace(/"/g,'&quot;')}" data-i="${i}"></td><td>${toD(r.T).toFixed(1)}</td><td>${r.RH.toFixed(1)}</td><td>${toD(r.DP).toFixed(1)}</td><td>${yrs(r.m.PI)}</td><td>${r.m.LM.toFixed(2)}</td><td>${r.m.E.toFixed(1)}</td><td>${r.m.mg>=0?'+':'−'}${Math.abs(r.m.mg).toFixed(1)}</td><td>${['aging','mech','mould','metal','gel'].filter(k=>r.m[k]).map(k=>`<span class="tag" style="background:${r.m[k]==='na'?'var(--line)':'var(--'+r.m[k]+')'}" title="${k}: ${L[r.m[k]]}"></span>`).join('')}</td></tr>`).join('');
 }
 function on(id,ev,fn){$(id).addEventListener(ev,fn)}
+function reportSection(report,title,source){
+  if(!source||!source.childNodes.length)return;
+  const section=document.createElement('section'),heading=document.createElement('h2');
+  section.className='report-section';heading.textContent=title;section.append(heading);
+  const chartCanvases=[...source.querySelectorAll('canvas')];
+  const content=source.cloneNode(true);
+  content.removeAttribute('id');
+  content.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+  content.querySelectorAll('details').forEach(el=>el.open=true);
+  content.querySelectorAll('input').forEach(el=>{const value=document.createElement('span');value.textContent=el.value;el.replaceWith(value)});
+  content.querySelectorAll('canvas').forEach((canvas,i)=>{
+    const image=document.createElement('img');image.src=chartCanvases[i].toDataURL('image/png');image.alt='Logged climate chart';canvas.replaceWith(image);
+  });
+  section.append(content);report.append(section);
+}
+function prepareReport(title,metadata){
+  const report=$('print-report');report.replaceChildren();
+  const heading=document.createElement('h1'),meta=document.createElement('p');
+  heading.textContent=title;meta.className='report-meta';
+  meta.textContent=metadata.concat(['Generated '+new Date().toLocaleString('en-NZ'),PROV]).join(' | ');
+  report.append(heading,meta);return report;
+}
+async function printReport(kind){
+  let report;
+  if(kind==='eval'){
+    const metadata=[
+      `Conditions: ${fmt(st.T)}, ${st.RH.toFixed(1)}% RH, dew point ${fmt(st.DP)}`,
+      `Material: ${PROF[st.prof].name} (${st.bench}-year benchmark, ${st.ea} kJ/mol activation energy)`,
+      `Mould margin: ${buf()}% RH`,
+      ctl.ash==='none'||!ASH[ctl.ash]?'Control type: none':`Control type: ASHRAE ${ASH[ctl.ash].name}; baseline ${ctl.baseT.toFixed(1)} °C / ${ctl.baseRH.toFixed(0)}% RH`
+    ];
+    report=prepareReport('Collection climate evaluation',metadata);
+    reportSection(report,'Preservation evaluation',$('ev'));
+    reportSection(report,'Lifetime models',$('models'));
+  }else{
+    if(!logState||!logAnalysis)return;
+    const metadata=[
+      `File: ${logState.name||'Imported logger data'}`,
+      `Material: ${PROF[st.prof].name} (${st.bench}-year benchmark, ${st.ea} kJ/mol activation energy)`,
+      `Mould margin: ${buf()}% RH`,
+      ctl.ash==='none'?'Control type: none':`Control type: ASHRAE ${ctl.ash}; baseline ${ctl.baseT.toFixed(1)} °C / ${ctl.baseRH.toFixed(0)}% RH`
+    ];
+    report=prepareReport('Logged climate analysis',metadata);
+    reportSection(report,'Summary, ratings and indicators',$('log'));
+    reportSection(report,'Events',$('evts'));
+    reportSection(report,'Charts',$('logc'));
+  }
+  await Promise.all([...report.querySelectorAll('img')].map(image=>image.decode()));
+  await new Promise(resolve=>requestAnimationFrame(resolve));
+  window.print();
+}
+on('pdf-eval','click',()=>printReport('eval'));
+on('pdf-log','click',()=>printReport('log'));
 function saveState(){
   try{localStorage.setItem('cce.v2',JSON.stringify({T:st.T,RH:st.RH,mode:st.mode,F:st.F,ea:st.ea,bench:st.bench,prof:st.prof,buf:parseFloat($('buf').value)||5,ash:ctl.ash,baseT:ctl.baseT,baseRH:ctl.baseRH}))}catch(e){}
 }
@@ -799,7 +878,7 @@ on('usecur','click',()=>{ctl.baseT=st.T;ctl.baseRH=st.RH;$('baseT').value=ctl.ba
 on('usemean','click',()=>{if(!logAnalysis)return;ctl.baseT=logAnalysis.tMean;ctl.baseRH=logAnalysis.rMean;$('baseT').value=ctl.baseT.toFixed(1);$('baseRH').value=ctl.baseRH.toFixed(0);render();renderLog();saveState()});
 function loadLogText(txt,name){
   const p=parseLog(txt);
-  if(p.error){logState=null;logAnalysis=null;$('log').innerHTML='<p><small>'+p.error+'</small></p>';$('logc').innerHTML='';$('evts').innerHTML='';$('logx').disabled=true;$('evtX').disabled=true;return}
+  if(p.error){logState=null;logAnalysis=null;$('log').innerHTML='<p><small>'+p.error+'</small></p>';$('logc').innerHTML='';$('evts').innerHTML='';$('logx').disabled=true;$('evtX').disabled=true;$('pdf-log').disabled=true;return}
   p.name=name;logState=p;renderLog();
 }
 on('file','change',e=>{
